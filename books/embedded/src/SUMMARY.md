@@ -9,6 +9,7 @@
 - [5장 CAN: 여러 노드가 말하는 버스](05-can.md)
 - [6장 자동차는 거대한 CAN 네트워크다](06-car-network.md)
 - [7장 OBD-II 실전: 쏘렌토에서 데이터 읽기](07-obd2-in-practice.md)
+- [8장 UDS와 제조사 진단](08-uds-manufacturer-diagnostics.md)
 - [10장 IoT 프로토콜 지도](10-iot-protocols.md)
 - [11장 마이크로컨트롤러](11-microcontroller.md)
 - [12장 도구와 디버깅](12-tools-debugging.md)

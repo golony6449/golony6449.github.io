@@ -136,7 +136,264 @@ C4 0B     CRC-16/MODBUS (리틀엔디언으로 전송)
 
 여기서 중요한 것은 **필드의 경계와 순서를 먼저 정하고, 그다음 값을 해석한다**는 것이다. 바이트를 하나씩 보며 "이게 주소인가 데이터인가"를 추측하면 반드시 틀린다. 10장에서 Modbus를 더 자세히 다룬다.
 
-## 3.5 상태 기계 파서
+OBD-II CAN 프레임도 같은 방식으로 읽는다. 다음은 엔진 회전수 응답을 헤더까지 포함해 캡처한 예다.
+
+```text
+7E8  04 41 0C 1A F8 CC CC CC
+│    │  │  │  └──┴─ 데이터: 0x1AF8 = 6904 → 6904/4 = 1726 rpm
+│    │  │  └────── PID 0C (엔진 회전수)
+│    │  └───────── 응답 서비스 0x41 (요청 0x01 + 0x40)
+│    └──────────── PCI: Single Frame, 데이터 4바이트
+└───────────────── CAN ID: ECU 응답 주소(7E0 + 8)
+```
+
+- `04`는 ISO-TP Single Frame의 PCI다. "데이터가 4바이트"라는 뜻이다.
+- `41`은 Mode 01 요청에 대한 긍정 응답이다. 요청 서비스 `01`에 `0x40`을 더한 값이다.
+- `0C`는 PID, `1A F8`은 빅엔디언 16비트 값이다.
+- 뒤의 `CC`는 패딩이다. 길이 필드가 4이므로 `CC CC CC`는 데이터가 아니다.
+
+**PCI를 데이터로 착각하면 `04`를 첫 번째 데이터 바이트로 읽는다.** 헤더를 켠 원시 로그에서는 PCI와 애플리케이션 데이터를 반드시 구분한다.
+
+## 3.5 ELM327 응답의 경계
+
+ELM327은 바이트 스트림 위에 아주 단순한 프레이밍을 얹는다.
+
+- 명령은 `\r`(CR)로 끝난다.
+- 응답의 각 줄도 `\r`로 끝난다.
+- 모든 응답의 마지막에 프롬프트 `>`가 온다.
+- 에코가 켜져 있으면 내가 보낸 명령도 그대로 돌아온다.
+- 긴 응답은 여러 줄로 나뉜다.
+
+```text
+PC → "010C\r"
+ELM → "010C\r"          ← 에코(ATE0로 끌 수 있다)
+ELM → "41 0C 1A F8\r"
+ELM → "\r"
+ELM → ">"
+```
+
+바이트로 보면 다음과 같다.
+
+```text
+30 31 30 43 0D 34 31 20 30 43 20 31 41 20 46 38 0D 0D 3E
+0  1  0  C  \r 4  1     0  C     1  A     F  8  \r \r >
+```
+
+여기서 `readline()`을 쓰면 문제가 생긴다. pyserial의 `readline()`은 `\n`(LF)을 찾는데, ELM327은 `\r`만 보낸다. 타임아웃이 될 때까지 읽다가 여러 줄을 한꺼번에 돌려주거나, 반대로 줄이 잘린다. **프롬프트 `>`를 만날 때까지 읽는** 파서가 맞다.
+
+### 줄 프레이머
+
+다음 코드는 바이트를 조금씩 넣어도 줄과 프롬프트를 정확히 나눈다.
+
+```python
+from dataclasses import dataclass, field
+
+
+@dataclass
+class ElmFramer:
+    buf: bytearray = field(default_factory=bytearray)
+    lines: list[str] = field(default_factory=list)
+    _ready: bool = False
+
+    def feed(self, data: bytes) -> tuple[list[str], bool]:
+        """바이트를 넣고 (완성된 줄 목록, 프롬프트 도착 여부)를 돌려준다."""
+        self.buf.extend(data)
+        while True:
+            cr = self.buf.find(b"\r")
+            gt = self.buf.find(b">")
+            if cr < 0 and gt < 0:
+                break
+            if gt >= 0 and (cr < 0 or gt < cr):
+                text = bytes(self.buf[:gt]).strip()
+                if text:
+                    self.lines.append(text.decode("ascii", errors="replace"))
+                del self.buf[:gt + 1]
+                self._ready = True
+            else:
+                text = bytes(self.buf[:cr]).strip()
+                if text:
+                    self.lines.append(text.decode("ascii", errors="replace"))
+                del self.buf[:cr + 1]
+        out, self.lines = self.lines, []
+        ready, self._ready = self._ready, False
+        return out, ready
+```
+
+- `\r`과 `>`가 같은 버퍼에 들어와도 순서대로 처리한다.
+- 프롬프트 뒤에 남는 바이트는 다음 응답으로 넘어간다.
+- 에코는 `line == cmd`로 걸러 낸다. `ATZ`처럼 응답이 여러 줄인 명령은 에코만 걸러 내고 나머지는 남긴다.
+- `SEARCHING...`, `NO DATA`, `?`, `STOPPED`, `BUFFER FULL`은 **줄 자체가 상태 메시지**다. 파서가 이 문자열을 값으로 해석하지 않도록 먼저 분류한다.
+
+### 동작 확인
+
+```python
+stream = b"010C\r41 0C 1A F8\r\r>"
+p = ElmFramer()
+out = []
+for byte in stream:
+    lines, ready = p.feed(bytes([byte]))
+    out.extend(lines)
+    if ready:
+        break
+assert [line for line in out if line != "010C"] == ["41 0C 1A F8"]
+```
+
+한 바이트씩 넣어도, 한 번에 넣어도 결과가 같아야 한다. 3.10절의 분할 테스트를 ELM327 로그에도 그대로 적용한다.
+
+### ELM327이 다중 프레임을 보여 주는 방식
+
+ELM327은 기본 설정(CAF1)에서 ISO-TP를 자동으로 조립해 준다. VIN 요청 `0902`의 응답은 이런 모양이다.
+
+```text
+014
+0: 49 02 01 54 45 53
+1: 54 56 49 4E 30 30 30
+2: 30 30 30 30 30 30 30
+```
+
+- `014`는 전체 데이터 길이를 16진수로 쓴 것이다(0x14 = 20바이트).
+- `0:`, `1:`, `2:`는 ELM327이 붙인 세그먼트 번호다. **CAN의 PCI 바이트가 아니다.**
+- 각 줄의 데이터를 순서대로 이어 붙이면 `49 02 01` + 17바이트 VIN이 된다.
+- 헤더를 켜면(`ATH1`) `7E8 10 14 49 02 01 ...`처럼 CAN ID와 실제 PCI가 보인다. 이때는 ELM327이 조립하기 전의 원시 프레임을 보는 것이다.
+
+두 표현을 섞으면 파서가 망가진다. "ELM327이 조립해 준 줄"을 파싱할 때는 `0:` 접두와 총 길이를 처리하고, "원시 CAN 프레임"을 파싱할 때는 ISO-TP PCI를 직접 처리한다. 어느 쪽인지 먼저 정한다.
+
+## 3.6 ISO-TP: CAN 위의 작은 전송 계층
+
+클래식 CAN 한 프레임은 데이터가 8바이트까지다. OBD-II 응답 중 VIN, Calibration ID, 긴 DTC 목록은 8바이트를 넘는다. 이때 ISO 15765-2(ISO-TP)가 메시지를 나눠 보내고 받는 쪽이 다시 조립한다.
+
+| 프레임 | PCI 상위 니블 | 내용 |
+|---|---|---|
+| SF(Single Frame) | `0` | 1바이트 PCI. 하위 니블이 데이터 길이(1~7) |
+| FF(First Frame) | `1` | 2바이트 PCI. 하위 12비트가 전체 길이(최대 4095) |
+| CF(Consecutive Frame) | `2` | 1바이트 PCI. 하위 니블이 시퀀스 번호(1~F 순환) |
+| FC(Flow Control) | `3` | 3바이트 PCI. 상태(CTS/WAIT/OVERFLOW), block size, STmin |
+
+### 바이트로 보기
+
+VIN 17자를 응답한다고 하자. 전체 애플리케이션 데이터는 `49 02 01` + 17바이트 = 20바이트다. 20은 `0x014`이므로 FF의 길이 필드는 `014`다.
+
+```text
+7E8  10 14 49 02 01 54 45 53     ← FF: 전체 0x014바이트, 첫 6바이트
+7E8  21 54 56 49 4E 30 30 30     ← CF 1: 시퀀스 1, 다음 7바이트
+7E8  22 30 30 30 30 30 30 30     ← CF 2: 시퀀스 2, 다음 7바이트
+```
+
+- FF의 데이터는 `10 14` 뒤의 6바이트다.
+- CF의 데이터는 `21`/`22` 뒤의 7바이트다.
+- 시퀀스는 1부터 시작해 `F` 다음에 `0`으로 돌아간다.
+- 마지막 CF는 전체 길이에 맞춰 자른다. 남는 바이트는 패딩이며, OBD-II에서는 `0xCC`를 권장한다.
+- 수신 측은 FF를 받으면 FC를 보내 "계속 보내라(CTS)"고 알린다. ELM327은 이 FC를 자동으로 보내 준다. 원시 CAN을 직접 다룰 때는 애플리케이션이 FC를 보내야 한다.
+
+### 조립 코드
+
+```python
+class IsoTpAssembler:
+    def __init__(self) -> None:
+        self._buf = bytearray()
+        self._need = 0
+        self._next_seq = 1
+        self._active_id: int | None = None
+
+    def reset(self) -> None:
+        self._buf.clear()
+        self._need = 0
+        self._next_seq = 1
+        self._active_id = None
+
+    def feed(self, can_id: int, data: bytes) -> bytes | None:
+        """CAN 프레임 하나를 넣고, 완성된 메시지가 있으면 돌려준다."""
+        if not data:
+            return None
+        pci = data[0] >> 4
+
+        if pci == 0:  # Single Frame
+            length = data[0] & 0x0F
+            if length == 0 or length > len(data) - 1:
+                return None
+            return bytes(data[1:1 + length])
+
+        if pci == 1:  # First Frame
+            if len(data) < 2:
+                return None
+            length = ((data[0] & 0x0F) << 8) | data[1]
+            if length == 0:
+                return None
+            self._active_id = can_id
+            self._buf = bytearray(data[2:])
+            self._need = length
+            self._next_seq = 1
+            if len(self._buf) >= self._need:
+                payload = bytes(self._buf[:self._need])
+                self.reset()
+                return payload
+            return None
+
+        if pci == 2:  # Consecutive Frame
+            if self._active_id != can_id or self._need == 0:
+                return None
+            seq = data[0] & 0x0F
+            if seq != self._next_seq:
+                self.reset()          # 순서가 어긋나면 조립을 포기한다
+                return None
+            self._buf.extend(data[1:])
+            self._next_seq = (self._next_seq + 1) & 0x0F
+            if len(self._buf) >= self._need:
+                payload = bytes(self._buf[:self._need])
+                self.reset()
+                return payload
+            return None
+
+        return None  # Flow Control 등은 여기서 처리하지 않는다
+
+
+def flow_control(block_size: int = 0, stmin: int = 0) -> bytes:
+    """수신 측이 보내는 FC 프레임. block_size=0은 끝까지, stmin=0은 지연 없음."""
+    return bytes([0x30, block_size, stmin, 0, 0, 0, 0, 0])
+```
+
+### 동작 확인
+
+```python
+frames = [
+    (0x7E8, bytes.fromhex("10 14 49 02 01 54 45 53")),
+    (0x7E8, bytes.fromhex("21 54 56 49 4E 30 30 30")),
+    (0x7E8, bytes.fromhex("22 30 30 30 30 30 30 30")),
+]
+
+a = IsoTpAssembler()
+out = []
+for can_id, data in frames:
+    msg = a.feed(can_id, data)
+    if msg is not None:
+        out.append(msg)
+
+assert out == [b"\x49\x02\x01TESTVIN0000000000"]
+```
+
+- 테스트의 VIN은 `TESTVIN0000000000`(17자)이다. 실제 VIN을 코드·로그·책에 남기지 않는다.
+- FF와 CF의 CAN ID가 다르면 조립하지 않는다. 같은 버스에 여러 ECU가 응답할 때 다른 ECU의 CF가 섞이는 것을 막는다.
+- 시퀀스가 어긋나면 조립을 포기하고 다음 FF를 기다린다. 부분 데이터를 억지로 붙이지 않는다.
+- FC를 보내야 하는 상황에서 FC를 보내지 않으면 상대는 첫 FF 뒤에 멈춘다. "응답이 첫 줄만 온다"는 증상의 원인 중 하나다.
+
+### STmin과 block size
+
+FC의 세 번째 바이트 STmin은 CF 사이의 최소 간격이다. `0x00`~`0x7F`는 밀리초, `0xF1`~`0xF9`는 100~900마이크로초를 뜻한다. block size는 "CF를 몇 개 보낸 뒤 다시 FC를 기다릴지"다. `0`이면 끝까지 보낸다.
+
+이 값이 맞지 않으면 "응답이 일부만 온다", "타임아웃", "BUFFER FULL" 같은 증상이 난다. ELM327은 대부분 자동으로 처리하지만, 원시 CAN 도구로 직접 요청할 때는 FC를 명시해야 한다.
+
+```python
+import can
+
+bus = can.Bus(interface="socketcan", channel="can0")
+bus.send(can.Message(
+    arbitration_id=0x7E0,          # 테스터 → ECU
+    is_extended_id=False,
+    data=flow_control(block_size=0, stmin=0),
+))
+```
+
+## 3.7 상태 기계 파서
 
 프레임을 한 번에 받는다고 가정하지 말고, **바이트 하나를 넣을 때마다 상태가 진행되는 파서**를 만든다. 그래야 부분 수신·노이즈·재동기화를 모두 같은 코드로 처리할 수 있다.
 
@@ -248,7 +505,7 @@ assert p.feed(good) == [b"\x01\x2A\x00"]
 
 `bad`의 CRC가 틀리면 파서는 `A5`를 버리고 다음 바이트부터 `SOF`를 다시 찾는다. `good`이 들어오면 정상적으로 프레임을 완성한다.
 
-## 3.6 부분 수신과 버퍼
+## 3.8 부분 수신과 버퍼
 
 - `read(n)`은 n바이트를 "최대" 돌려준다. 타임아웃이 있으면 그 전에 받은 것만 돌려준다. `read(n)`의 반환 길이를 항상 확인한다.
 - `readline()`은 개행이 올 때까지 기다린다. 바이너리에서는 개행이 우연히 payload에 들어갈 수 있으므로 쓰지 않는다.
@@ -258,7 +515,7 @@ assert p.feed(good) == [b"\x01\x2A\x00"]
 - Python에서 `bytes += chunk`를 반복하면 O(n²)이 된다. `bytearray.extend()`를 쓰고, 앞에서부터 소비할 때는 인덱스를 유지하다가 가끔 한 번에 압축한다.
 - 로그에는 파싱된 값만이 아니라 **원시 hex와 단조 시각(monotonic)**을 남긴다. `time.time()`은 시계 보정으로 점프할 수 있다.
 
-## 3.7 타임아웃, 재전송, 멱등성
+## 3.9 타임아웃, 재전송, 멱등성
 
 - 타임아웃은 "상대의 최악 처리 시간 + 전송 시간 + 여유"다. 고정 1초를 쓰면 느린 장치에서 정상 응답을 버리고, 빠른 장치에서는 고장을 늦게 발견한다.
 - 응답이 없을 때 재전송하려면 **중복을 걸러 낼 수단**이 필요하다. 시퀀스 번호, 트랜잭션 ID, 또는 멱등 명령만 허용하는 규칙이다.
@@ -266,6 +523,10 @@ assert p.feed(good) == [b"\x01\x2A\x00"]
 - 재시도는 지수 백오프와 최대 횟수를 둔다. 연속 실패가 임계치를 넘으면 링크를 리셋하거나 안전 상태로 간다.
 - "설정 추가" 같은 명령은 재전송 시 두 번 적용될 수 있다. "절대값 설정"으로 설계하면 멱등해진다.
 - 시각은 `time.monotonic()`으로 잰다. 벽시계는 NTP/사용자 변경으로 뒤로 갈 수 있다.
+
+OBD-II에서는 `7F <SID> 78`(responsePending)이 "실패"가 아니라 "잠시 기다려"라는 응답이다. 이 응답을 받으면 타임아웃을 연장하고 진짜 응답을 기다린다. `78`을 받자마자 같은 요청을 다시 보내면 ECU가 더 바빠진다. 반대로 `7F <SID> 31`(requestOutOfRange)은 "그 DID/PID가 없다"는 뜻이므로 재시도해도 결과가 같다. **NRC별로 재시도 정책을 나눈다.**
+
+읽기 요청은 재시도해도 되지만, 쓰기·루틴 요청은 "응답을 못 받았다"와 "실행됐는데 응답을 못 받았다"를 구분할 수 없다. 그래서 쓰기에는 멱등성 키나 상태 확인 절차가 필요하다. 이 책은 쓰기 자체를 하지 않는다. 9장에서 이 주제를 안전 관점에서 다시 다룬다.
 
 ### 멱등성 설계 예
 
@@ -276,7 +537,7 @@ assert p.feed(good) == [b"\x01\x2A\x00"]
 
 모든 명령을 절대값으로 바꿀 수는 없다. 그럴 때는 요청에 시퀀스 번호를 붙이고, 상대가 마지막으로 처리한 번호를 기억해 중복을 버린다.
 
-## 3.8 파서 테스트
+## 3.10 파서 테스트
 
 파서는 웹의 JSON 파서보다 입력이 훨씬 지저분하다. 다음을 자동 테스트로 만든다.
 
@@ -307,7 +568,46 @@ for split in range(1, len(frame)):
 
 이 테스트는 "어느 지점에서 잘려도 파서가 견딘다"를 증명한다. 시리얼에서는 어느 지점에서 잘릴지 예측할 수 없으므로, 모든 분할 지점을 시험하는 것이 가장 확실하다.
 
-## 3.9 체크리스트
+### ELM327 로그 테스트
+
+ELM327 로그에는 값이 아닌 줄이 섞인다. 다음을 테스트에 넣는다.
+
+- `SEARCHING...`이 첫 줄에 와도 값 파싱이 실패하지 않는다.
+- `NO DATA`, `?`, `STOPPED`, `BUFFER FULL`을 오류 상태로 분류한다.
+- 에코(`010C`)가 섞여도 응답만 고른다.
+- 프롬프트 `>`가 여러 줄 뒤에 와도 한 응답으로 묶는다.
+- 응답이 한 바이트씩 쪼개져도 같은 결과가 나온다.
+- `ATZ` 직후의 버전 줄과 `OK`를 OBD 응답으로 오해하지 않는다.
+
+### ISO-TP 테스트
+
+```python
+def test_isotp_byte_by_byte():
+    frames = [
+        (0x7E8, bytes.fromhex("10 14 49 02 01 54 45 53")),
+        (0x7E8, bytes.fromhex("21 54 56 49 4E 30 30 30")),
+        (0x7E8, bytes.fromhex("22 30 30 30 30 30 30 30")),
+    ]
+    a = IsoTpAssembler()
+    out = []
+    for can_id, data in frames:
+        msg = a.feed(can_id, data)
+        if msg:
+            out.append(msg)
+    assert out == [b"\x49\x02\x01TESTVIN0000000000"]
+```
+
+CAN 프레임은 하드웨어가 8바이트 경계를 만들어 주므로, 보통은 프레임 단위로 넣으면 된다. 하지만 시리얼로 원시 프레임을 받아 파싱하는 도구라면 프레임 내용이 쪼개질 수 있다. 그때는 3.5절의 `ElmFramer`처럼 바이트 단위 상태 기계를 한 겹 더 둔다. **"CAN은 프레임 경계가 있다"와 "내가 그 경계를 보존해서 읽는다"는 다른 얘기다.**
+
+ISO-TP에서 추가로 시험할 것:
+
+- FF의 길이보다 CF가 적을 때 조립하지 않는다.
+- CF 시퀀스가 건너뛰면 조립을 포기하고 다음 FF를 기다린다.
+- 다른 CAN ID의 CF가 섞이면 조립하지 않는다.
+- 길이가 0인 FF, 8바이트보다 큰 SF를 거부한다.
+- 마지막 CF의 패딩(`0xCC`)이 payload에 들어가지 않는다.
+
+## 3.11 체크리스트
 
 - [ ] 프레임 경계 규칙이 문서화되어 있는가
 - [ ] 최대 길이와 버퍼 상한이 있는가
@@ -318,6 +618,10 @@ for split in range(1, len(frame)):
 - [ ] 부분 프레임 타임아웃이 있는가
 - [ ] 재전송 시 중복 실행을 막는가
 - [ ] 원시 hex 로그를 남기는가
+- [ ] ELM327의 `\r`, 에코, 프롬프트 `>`를 처리하는가
+- [ ] `SEARCHING...`, `NO DATA`, `?`, `STOPPED`, `BUFFER FULL`을 값과 구분하는가
+- [ ] ISO-TP SF/FF/CF를 조립하고, FC가 필요한 상황을 아는가
+- [ ] CF 시퀀스 오류·다른 CAN ID·길이 불일치에서 안전하게 포기하는가
 
 ## 흔한 실수
 
@@ -334,6 +638,11 @@ for split in range(1, len(frame)):
 | `readline()`으로 바이너리 읽기 | payload의 개행에서 끊김 | `read(n)` + 상태 기계 |
 | 응답 ID를 매칭하지 않음 | 늦게 온 응답을 다음 요청의 응답으로 오인 | 요청/트랜잭션 ID |
 | 재시도에 멱등성 없음 | 같은 명령이 두 번 실행 | 시퀀스 번호, 절대값 명령 |
+| ELM327에 `readline()` 사용 | `\r`만 와서 타임아웃·줄 잘림 | 프롬프트 `>`까지 읽는 프레이머 |
+| ELM327 조립 줄과 원시 PCI를 혼동 | `04`·`10`을 데이터로 읽음 | `ATH1`/`CAF` 설정을 먼저 확인 |
+| ISO-TP FF/CF를 한 프레임으로 착각 | 긴 응답이 잘리거나 섞임 | PCI 타입·길이·시퀀스 검사 |
+| CF 시퀀스 오류를 무시 | 다른 ECU 데이터가 섞임 | CAN ID와 시퀀스가 맞을 때만 조립 |
+| FC를 보내지 않음 | FF 뒤 응답이 멈춤 | 원시 CAN이면 FC를 명시적으로 전송 |
 
 ## 장 요약
 
@@ -345,5 +654,8 @@ for split in range(1, len(frame)):
 - `parse(full) == parse(byte_by_byte)`를 자동 테스트로 증명한다.
 - 재전송에는 멱등성과 중복 제거가 필요하다. 시각은 `time.monotonic()`으로 잰다.
 - 로그에는 원시 hex와 단조 시각을 남긴다.
+- ELM327은 `\r`과 프롬프트 `>`로 응답을 구분한다. `readline()` 대신 프롬프트까지 읽는 프레이머를 쓴다.
+- ELM327이 조립해 준 `0:`/`1:` 줄과 원시 CAN의 ISO-TP PCI는 다른 계층이다. 둘을 섞지 않는다.
+- 8바이트를 넘는 OBD 응답은 ISO-TP의 SF/FF/CF/FC로 오간다. CAN ID와 시퀀스를 검사하며 조립한다.
 
 다음 장에서는 보드 안에서 센서·메모리·디스플레이와 대화하는 I2C와 SPI를 다룬다. UART와 달리 클록 선이 있고, 주소나 CS로 여러 장치를 구분한다.

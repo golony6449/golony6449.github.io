@@ -18,7 +18,7 @@ books/embedded/src/         책 원고
 
 ## 로컬 미리보기
 
-[mdBook](https://rust-lang.github.io/mdBook/) 0.5.4를 설치한 뒤 책 폴더에서 실행합니다.
+[mdBook](https://rust-lang.github.io/mdBook/) 0.5.4를 설치한 뒤 저장소 루트에서 실행합니다.
 
 ```bash
 mdbook serve books/embedded

@@ -23,10 +23,12 @@ jobs:
 
       - name: Install mdBook
         run: |
+          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/mdbook"
-          curl -sSL "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-unknown-linux-gnu.tar.gz" \
+          curl -fsSL "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xz -C "$RUNNER_TEMP/mdbook"
           echo "$RUNNER_TEMP/mdbook" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/mdbook/mdbook" --version
 
       - name: Build book
         run: mdbook build books/embedded

@@ -1,6 +1,6 @@
 [book]
 title = "웹 개발자를 위한 임베디드 입문"
-description = "6년차 웹 개발자가 임베디드·IoT·시리얼 통신에 입문하는 책"
+description = "6년차 웹 개발자가 임베디드·IoT·차량 OBD-II/CAN에 입문하는 책"
 authors = ["Park SeongHeum"]
 language = "ko"
 src = "src"

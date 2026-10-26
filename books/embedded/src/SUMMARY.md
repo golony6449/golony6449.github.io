@@ -7,6 +7,7 @@
 - [3장 프레이밍과 파싱: 메시지 경계 만들기](03-framing-parsing.md)
 - [4장 I2C와 SPI: 보드 안의 버스](04-i2c-spi.md)
 - [5장 CAN: 여러 노드가 말하는 버스](05-can.md)
+- [6장 자동차는 거대한 CAN 네트워크다](06-car-network.md)
 - [10장 IoT 프로토콜 지도](10-iot-protocols.md)
 - [11장 마이크로컨트롤러](11-microcontroller.md)
 - [12장 도구와 디버깅](12-tools-debugging.md)

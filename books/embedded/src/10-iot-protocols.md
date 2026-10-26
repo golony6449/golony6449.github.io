@@ -1,4 +1,4 @@
-# 6장 IoT 프로토콜 지도
+# 10장 IoT 프로토콜 지도
 
 ## 이 장에서
 
@@ -26,7 +26,7 @@ IoT는 하나의 프로토콜이 아니라 **물리 계층 + 전송 + 메시징/
 - 차량: CAN
 - 원격 계량: LoRaWAN/NB-IoT
 
-게이트웨이가 중간에서 프로토콜을 바꾸는 구성이 흔하다. 예: RS-485 Modbus → ESP32 → MQTT. 이 구조는 6.11절에서 예로 든다.
+게이트웨이가 중간에서 프로토콜을 바꾸는 구성이 흔하다. 예: RS-485 Modbus → ESP32 → MQTT. 이 구조는 10.11절에서 예로 든다.
 
 ## 6.2 MQTT (Message Queuing Telemetry Transport)
 

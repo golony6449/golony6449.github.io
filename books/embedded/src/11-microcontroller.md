@@ -212,6 +212,8 @@ WAIT_ACK ──(성공)──────────────────→
 
 OBD 요청도 상태 기계로 만든다. `delay()`로 응답을 기다리면 그동안 다른 일을 못 한다.
 
+아래 C는 **Arduino 스타일 의사코드**다. `millis()`는 Arduino API이고, `uart_write_str()`, `line_ready()`, `parse_rpm_line()`, `log_error()`는 독자가 구현할 헬퍼다. 다른 MCU에서는 `millis()`를 동등한 시각 함수로 바꾸고, 헬퍼의 시그니처를 프로젝트에 맞춘다.
+
 ```c
 typedef enum {
     OBD_IDLE,

@@ -240,7 +240,7 @@ ELM327은 Hayes 모뎀과 비슷한 `AT` 명령을 쓴다. 자주 쓰는 것만 
 | `ATI` | 버전 출력 | 클론이 `v1.5`를 보고하는 경우가 있다. v1.5는 실제 ELM Electronics 버전이 아니다 |
 | `ATE0` / `ATE1` | 에코 끄기/켜기 | 스크립트에서는 끈다 |
 | `ATL0` / `ATL1` | LF 끄기/켜기 | 응답을 `\r`만으로 끝내 간단해진다 |
-| `ATS0` / `ATS1` | 공백 끄기/켜기 | 파싱이 쉬워진다 |
+| `ATS0` / `ATS1` | 공백 끄기/켜기 | `ATS0`이면 `410C1AF8`처럼 붙어 온다. 파서가 두 형식을 처리해야 한다 |
 | `ATSP0` | 프로토콜 자동 검색 | 차량에 맞는 프로토콜을 찾는다 |
 | `ATSP6` | ISO 15765-4 CAN 11비트 500k 고정 | 쏘렌토에서 확인된 설정 |
 | `ATDPN` | 현재 프로토콜 번호 | `A6`이면 자동 검색 후 프로토콜 6 |
@@ -258,13 +258,13 @@ ELM327은 Hayes 모뎀과 비슷한 `AT` 명령을 쓴다. 자주 쓰는 것만 
 
 ```text
 PC → ATZ\r
-ELM327 → ATZ\r\rELM327 v1.5\r\r>       ← 에코가 켜져 있으면 내가 보낸 명령도 돌아온다
+ELM327 → ATZ\r\n\r\nELM327 v1.5\r\n\r\n>   ← ATL1(기본)이라 CR 뒤에 LF가 붙는다
 
 PC → ATE0\r
-ELM327 → OK\r\r>
+ELM327 → OK\r\n\r\n>
 
 PC → ATL0\r
-ELM327 → OK\r\r>
+ELM327 → OK\r\r>                       ← ATL0 이후에는 LF가 없다
 
 PC → ATSP0\r
 ELM327 → OK\r\r>
@@ -272,6 +272,9 @@ ELM327 → OK\r\r>
 PC → 010C\r
 ELM327 → SEARCHING...\r41 0C 1A F8\r\r>
 ```
+
+- `ATL1`이 기본이라 첫 응답에는 `\n`이 붙는다. `ATL0`을 보낸 뒤부터는 `\r`만 온다. 파서는 둘 다 처리해야 한다.
+- 에코가 켜져 있으면 내가 보낸 명령도 돌아온다. `ATE0`은 그 에코를 끈다.
 
 - `SEARCHING...`은 프로토콜을 찾는 중이라는 뜻이다. 첫 요청에서만 나올 수 있다.
 - 응답 `41 0C 1A F8`은 "Mode 01, PID 0C, 데이터 1A F8"이다. 7장에서 이 값을 회전수로 바꾼다.
@@ -393,7 +396,6 @@ try:
     print(elm.command("ATZ", timeout=3))       # ['ELM327 v1.5'] 같은 버전 문자열
     print(elm.command("ATE0"))                 # ['OK']
     print(elm.command("ATL0"))
-    print(elm.command("ATS0"))
     print(elm.command("ATSP0", timeout=10))    # 프로토콜 자동 검색은 오래 걸릴 수 있다
     print(elm.command("ATDPN"))                # 예: ['A6']
     print(elm.command("010C"))                 # 예: ['41 0C 1A F8']

@@ -135,6 +135,7 @@ OK
 - 긴 응답은 `10 14`(FF) → `21`(CF1) → `22`(CF2)로 온다.
 - `62 F1 87` 뒤 데이터가 부품번호다. 위 예시는 테스트용 가짜 문자열이다.
 - 표준 주소로 돌아가려면 `ATSH7DF` 또는 `ATAR`을 쓴다.
+- 위 로그는 `ATH1`로 원시 프레임을 본 예시다. 아래 `read_did()`는 `ATH0` 기준이므로, 코드로 읽을 때는 `ATH0`을 보낸 뒤 호출한다.
 - 7E0~7E7 밖의 주소로 요청할 때는 `ATCRA <응답 주소>`, `ATFCSH <요청 주소>`, `ATFCSD 30 00 00`, `ATFCSM 1`이 필요할 수 있다. 클론에 따라 인자 없는 `ATCRA`가 `?`를 돌려주므로 `ATAR`로 필터를 푼다.
 
 ### 파이썬으로 읽기
@@ -143,7 +144,11 @@ OK
 
 ```python
 def read_did(elm: "Elm327", did: int, timeout: float = 2.0):
-    """0x22로 DID를 읽고 (데이터, NRC)를 돌려준다. 성공하면 NRC는 None."""
+    """0x22로 DID를 읽고 (데이터, NRC)를 돌려준다. 성공하면 NRC는 None.
+
+    ATH0(헤더 숨김) + CAF1(자동 포맷) 기준이다. ATH1이면 CAN ID와 PCI가
+    섞이므로 이 함수를 쓰지 말고 ISO-TP를 직접 조립한다.
+    """
     lines = elm.command(f"22{did:04X}", timeout=timeout)
 
     tokens: list[int] = []
@@ -156,6 +161,9 @@ def read_did(elm: "Elm327", did: int, timeout: float = 2.0):
             except ValueError:
                 pass                    # SEARCHING..., NO DATA 등
 
+    if any(token > 0xFF for token in tokens):
+        raise ValueError("ATH1 응답이 섞였습니다. ATH0으로 헤더를 끄세요.")
+
     for i in range(len(tokens) - 2):
         if tokens[i] == 0x62 and (tokens[i + 1] << 8 | tokens[i + 2]) == did:
             return bytes(tokens[i + 3:]), None
@@ -167,7 +175,7 @@ def read_did(elm: "Elm327", did: int, timeout: float = 2.0):
 - `62`와 DID를 확인해 다른 응답과 섞이지 않게 한다.
 - `7F 22 xx`면 NRC를 돌려준다.
 - `SEARCHING...`, `NO DATA`, `?` 같은 문자열은 16진수 변환에서 걸러진다.
-- `ATH1`이면 CAN ID와 PCI 토큰도 섞인다. 이 함수는 `62` 이후만 찾으므로 동작하지만, 엄밀하게 하려면 헤더를 끄거나 CAN ID를 확인한다.
+- 이 함수는 `ATH0`(헤더 숨김) 기준이다. `ATH1`이면 CAN ID와 PCI가 섞여 `bytes()` 변환도 실패하므로, `ATH0`으로 바꾼 뒤 호출한다. `ATH1` 원시 프레임은 3장의 ISO-TP 조립 코드로 처리한다.
 - 긴 응답에서 ELM327이 `0:`/`1:`로 조립해 주면 `:` 뒤만 이어 붙인다.
 
 ## 8.6 세션과 TesterPresent
@@ -321,7 +329,7 @@ def decode_dpf(data: bytes) -> dict[str, float | int]:
 
 DPF(Diesel Particulate Filter)는 디젤 배기가스의 그을음을 걸러 내는 필터다. 그을음이 쌓이면 배압이 올라가고, ECU가 **재생(regeneration)** 을 해서 그을음을 태운다.
 
-- 수동 재생(passive): 주행 중 배기가스 온도로 자연히 연소.
+- 자연 재생(passive): 주행 중 배기가스 온도로 자연히 연소.
 - 능동 재생(active): ECU가 연료를 추가로 분사해 배기가스 온도를 높임.
 - 강제 재생(forced): 정비 도구로 루틴을 실행. 높은 온도와 안전 조건이 필요.
 

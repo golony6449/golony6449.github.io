@@ -329,8 +329,6 @@ ELM327 v1.5        ← 클론이 보고하는 버전. v1.5는 실제 ELM Electro
 OK                 ← 에코 끄기
 >ATL0
 OK                 ← 줄바꿈(LF) 끄기. 응답은 \r로 끝난다
->ATS0
-OK                 ← 공백 출력 끄기
 >ATSP0
 OK                 ← 프로토콜 자동 검색
 >ATDPN

@@ -69,7 +69,6 @@ try:
     print(elm.command("ATZ", timeout=3))       # ['ELM327 v1.5'] 같은 버전
     print(elm.command("ATE0"))                 # ['OK']
     print(elm.command("ATL0"))
-    print(elm.command("ATS0"))
     print(elm.command("ATSP0", timeout=10))
     print(elm.command("ATDPN"))                # 예: ['A6']
     print(elm.command("ATRV"))                 # 예: ['12.4V']
@@ -80,7 +79,7 @@ finally:
 
 - `ATZ`는 어댑터를 리셋한다. 응답이 `STOPPED`면 리셋이 실행되지 않았을 수 있으니 다시 시도한다.
 - `ATE0`은 에코를 끈다. 스크립트에서 응답 파싱이 쉬워진다.
-- `ATL0`은 LF를 끄고, `ATS0`은 공백을 끈다. 둘 다 파싱을 단순하게 만든다.
+- `ATL0`은 LF를 끄고, `ATS0`은 공백을 끈다. 다만 `ATS0`을 쓰면 응답이 `410C1AF8`처럼 붙어 오므로 파서가 두 형식을 모두 처리해야 한다. 이 책의 대시보드는 공백을 그대로 두고 `ATS0`을 보내지 않는다.
 - `ATSP0`는 프로토콜 자동 검색이다. 몇 초 걸릴 수 있다.
 - `ATDPN`이 `A6`이면 ISO 15765-4 CAN 11비트 500k다. 쏘렌토에서 확인된 값이다.
 - `ATRV`는 배터리 전압이다. 시동 OFF에서 12V 안팎, 시동 중 13~14V대가 나온다.
@@ -145,7 +144,7 @@ Mode 01은 현재 센서 값을 읽는다. 요청은 `01 <PID>` 두 바이트이
 
 - `0C`는 빅엔디언 16비트다. `1A F8`을 리틀엔디언으로 읽으면 완전히 다른 값이 된다.
 - `05`와 `0F`는 `A − 40`이다. 0이면 −40°C다. 값이 0으로 고정되어 있으면 센서가 없거나 응답이 무효일 수 있다.
-- `42`는 0.001V 단위다. 12.4V면 `0x0C 0x40`? 계산해서 확인한다.
+- `42`는 0.001V 단위다. 12.4V = 12400 = `0x3070`이므로 `30 70`이다. `0x0C40`은 3136 → 3.136V이므로 헷갈리지 않는다.
 - `2F`는 퍼센트다. 연료 탱크 용량을 곱하면 리터가 된다. 쏘렌토 계기판 DID `B002`는 리터를 직접 준다(8장).
 
 ### 여러 PID를 한 번에
@@ -154,10 +153,10 @@ CAN에서는 한 요청에 최대 6개 PID를 넣을 수 있다. ELM327 데이�
 
 ```text
 >01 0C 0D 05 11 2F 42
-00A
+00F
 0: 41 0C 1A F8 0D 50
-1: 05 7B 11 40 2F 80 42
-2: 3A 98 00 00 00 00 00
+1: 05 7B 11 40 2F 80
+2: 42 3A 98
 ```
 
 - 응답은 요청한 순서와 다를 수 있다. **PID 번호로 찾아야 한다.**
@@ -337,9 +336,20 @@ class Elm327:
     def query_pid(self, pid: int) -> bytes | None:
         """Mode 01 PID를 읽고 데이터 바이트만 돌려준다."""
         for line in self.command(f"01{pid:02X}"):
-            parts = line.split()
-            if len(parts) >= 3 and parts[0] == "41" and int(parts[1], 16) == pid:
-                return bytes(int(p, 16) for p in parts[2:])
+            if ":" in line:                 # ELM327의 '0:', '1:' 조립 줄
+                line = line.split(":", 1)[1]
+            compact = "".join(line.split())  # ATS0(공백 끔)과 ATS1 둘 다 처리
+            if not compact.startswith("41") or len(compact) < 4:
+                continue
+            try:
+                got_pid = int(compact[2:4], 16)
+            except ValueError:
+                continue
+            if got_pid != pid:
+                continue
+            data = compact[4:]
+            if len(data) % 2 == 0:
+                return bytes.fromhex(data)
         return None
 
 
@@ -552,7 +562,7 @@ def main() -> None:
     elm = None
     if not args.demo:
         elm = Elm327(args.port, args.baud)
-        for cmd, timeout in [("ATZ", 3), ("ATE0", 1), ("ATL0", 1), ("ATS0", 1),
+        for cmd, timeout in [("ATZ", 3), ("ATE0", 1), ("ATL0", 1),
                              ("ATSP0", 10)]:
             print(cmd, "→", elm.command(cmd, timeout=timeout))
         print("protocol:", elm.command("ATDPN"))
@@ -636,7 +646,7 @@ uv run python obd_dashboard.py --port COM5 --baud 38400
 - [ ] 차량을 정차하고 P, 주차 브레이크를 확인했는가
 - [ ] OBD 포트와 어댑터가 제대로 체결됐는가
 - [ ] 보율(38400/9600/115200)을 찾았는가
-- [ ] `ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATSP0`를 보냈는가
+- [ ] `ATZ`, `ATE0`, `ATL0`, `ATSP0`를 보냈는가
 - [ ] `ATDPN`이 `A6`인지 확인했는가
 - [ ] `ATRV`로 배터리 전압을 확인했는가
 - [ ] `0100` 지원 비트마스크를 해석했는가

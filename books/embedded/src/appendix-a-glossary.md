@@ -319,7 +319,7 @@ OBD-II 포트와 PC의 UART/RS-232 사이를 해석하는 칩/어댑터. AT 명�
 디젤 배기가스의 그을음을 거르는 필터. 그을음이 쌓이면 재생(regeneration)으로 태운다. 강제 재생은 정비 절차이며 고온·화재 위험이 있다.
 
 **재생(regeneration)**
-DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 수동·능동·강제 재생이 있다.
+DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 자연(passive)·능동(active)·강제(forced) 재생이 있다.
 
 **MCP2515**
 SPI로 MCU에 붙는 CAN 컨트롤러. Raspberry Pi 같은 SBC에 CAN을 추가할 때 쓴다.

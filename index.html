@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>golony6449의 책과 글</title>
+  <meta name="description" content="golony6449가 쓰는 책과 글을 모아 둔 곳입니다.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f5f0;
+      --ink: #1f2328;
+      --muted: #5b6169;
+      --card: #ffffff;
+      --line: #d9d4c8;
+      --accent: #9a3412;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181c;
+        --ink: #e8e6e1;
+        --muted: #a7abb2;
+        --card: #1e2126;
+        --line: #33373d;
+        --accent: #fdba74;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
+        "Apple SD Gothic Neo", sans-serif;
+      line-height: 1.7;
+    }
+    main {
+      width: min(46rem, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 5rem 0 4rem;
+    }
+    header p {
+      margin: 0.5rem 0 0;
+      color: var(--muted);
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      margin: 3.5rem 0 1rem;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .books {
+      display: grid;
+      gap: 1rem;
+    }
+    .book {
+      display: block;
+      padding: 1.5rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+      color: inherit;
+      text-decoration: none;
+    }
+    .book:hover,
+    .book:focus-visible {
+      border-color: var(--accent);
+      outline: none;
+    }
+    .book strong {
+      display: block;
+      font-size: 1.25rem;
+      margin-bottom: 0.35rem;
+    }
+    .book span {
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>golony6449의 책과 글</h1>
+      <p>웹 개발에서 시작해 더 낮은 층으로 내려가며 공부한 것을 정리합니다.</p>
+    </header>
+
+    <h2>책</h2>
+    <div class="books">
+      <a class="book" href="./embedded/">
+        <strong>웹 개발자를 위한 임베디드 입문</strong>
+        <span>UART·프레이밍·I2C/SPI·CAN·IoT를 웹 개발자의 눈으로 읽는 책</span>
+      </a>
+    </div>
+
+    <footer>
+      <p>새 책과 글은 이 목록에 추가됩니다. <a href="https://github.com/golony6449/golony6449.github.io">저장소</a></p>
+    </footer>
+  </main>
+</body>
+</html>

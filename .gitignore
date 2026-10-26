@@ -1,0 +1,6 @@
+# mdBook build output
+book/
+books/*/book/
+
+# temporary working files
+.ds-tmp/

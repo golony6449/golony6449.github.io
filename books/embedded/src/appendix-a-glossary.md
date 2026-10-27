@@ -245,7 +245,7 @@ BLE 특성의 notify/indicate를 켜는 디스크립터. 이걸 켜지 않아 �
 산업용 사실상 표준 프로토콜. RTU(바이너리, CRC), ASCII(hex, LRC), TCP(포트 502, MBAP) 변형이 있다.
 
 **OPC UA**
-산업 자동화의 상위 통신 규격. 6장의 계층 표에 등장한다.
+산업 자동화의 상위 통신 규격. 10장의 계층 표에 등장한다.
 
 **CoAP**
 UDP 기반의 REST형 프로토콜. 포트 5683, DTLS 5684, observe와 block-wise 전송을 지원한다.
@@ -266,4 +266,60 @@ ISM 대역의 장거리·저전력 프로토콜. 게이트웨이와 duty cycle �
 스마트홈 프로토콜. Thread/Zigbee는 802.15.4 메시, Matter는 응용 계층 표준, Z-Wave는 sub-GHz 독자 규격이다.
 
 **게이트웨이(gateway)**
-프로토콜 변환, 로컬 필터링, 버퍼링, 오프라인 대응을 담당하는 중간 장치.
+프로토콜 변환, 로컬 필터링, 버퍼링, 오프라인 대응을 담당하는 중간 장치. 차량에서는 여러 CAN 버스 사이의 진단 요청을 라우팅한다.
+
+## A.5 차량 진단(OBD-II·UDS)
+
+**OBD-II (On-Board Diagnostics II)**
+차량의 배출가스 관련 진단을 표준화한 규격. SAE J1962 16핀 커넥터, SAE J1979 서비스/PID, ISO 15765-4 CAN 등을 포함한다.
+
+**OBD-II 커넥터**
+16핀 J1962 커넥터. 4번 차체 접지, 5번 신호 접지, 6번 CAN_H, 14번 CAN_L, 16번 +12V, 7/15번 K-line/L-line, 나머지는 제조사 재량이다.
+
+**PID (Parameter ID)**
+OBD-II Mode 01에서 읽는 표준 파라미터 번호. 예: 0C 엔진 회전수, 0D 차속, 05 냉각수 온도. PID마다 데이터 길이와 공식이 다르다.
+
+**Mode / Service**
+OBD-II 요청의 종류. 01 현재 데이터, 03 저장 DTC, 04 DTC 삭제, 09 차량 정보, 0A permanent DTC 등이 있다. 최신 표준은 "서비스"라고 부른다.
+
+**DTC (Diagnostic Trouble Code)**
+고장 코드. P(파워트레인), B(바디), C(샤시), U(네트워크) 계열이 있고, 2바이트로 인코딩된다.
+
+**Freeze frame**
+DTC가 발생한 순간의 PID 스냅샷. Mode 02로 읽는다.
+
+**Readiness monitor**
+배출가스 관련 자기 진단의 준비 상태. DTC를 지우면 초기화될 수 있고, 배출가스 검사에서 불합격할 수 있다.
+
+**DID (Data Identifier)**
+UDS `0x22`에서 읽는 2바이트 데이터 식별자. 제조사마다 의미가 다르고, 같은 DID도 ECU마다 다를 수 있다.
+
+**UDS (Unified Diagnostic Services)**
+ISO 14229 진단 프로토콜. `0x22` DID 읽기, `0x19` DTC 읽기, `0x10` 세션, `0x2E` 쓰기, `0x31` 루틴 등을 정의한다. CAN 위에서는 ISO-TP를 쓴다.
+
+**NRC (Negative Response Code)**
+UDS 부정 응답 `7F <SID> <NRC>`의 이유 코드. 0x31은 범위 밖(DID 없음), 0x78은 응답 대기, 0x7F는 현재 세션 미지원이다.
+
+**ISO-TP (ISO 15765-2)**
+CAN 한 프레임(8바이트)보다 긴 메시지를 SF/FF/CF/FC로 나눠 보내는 전송 계층.
+
+**SF / FF / CF / FC**
+ISO-TP의 Single Frame, First Frame, Consecutive Frame, Flow Control. FC는 수신 측이 보내는 흐름 제어다.
+
+**기능 주소(functional address)**
+OBD-II의 `7DF`. 여러 ECU에 브로드캐스트하는 진단 요청 주소.
+
+**물리 주소(physical address)**
+OBD-II의 `7E0`~`7E7`. 특정 ECU에 보내는 요청 주소. 응답은 `7E8`~`7EF`(요청 +8)다.
+
+**ELM327**
+OBD-II 포트와 PC의 UART/RS-232 사이를 해석하는 칩/어댑터. AT 명령과 프롬프트 `>`를 쓴다. 클론이 많고, 존재하지 않는 `v1.5`를 보고하는 제품도 있다.
+
+**DPF (Diesel Particulate Filter)**
+디젤 배기가스의 그을음을 거르는 필터. 그을음이 쌓이면 재생(regeneration)으로 태운다. 강제 재생은 정비 절차이며 고온·화재 위험이 있다.
+
+**재생(regeneration)**
+DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 자연(passive)·능동(active)·강제(forced) 재생이 있다.
+
+**MCP2515**
+SPI로 MCU에 붙는 CAN 컨트롤러. Raspberry Pi 같은 SBC에 CAN을 추가할 때 쓴다.

@@ -12,6 +12,8 @@ UART가 "케이블 밖으로 나가는 통신"이라면, I2C와 SPI는 **보드 
 - I2C 버스가 잠기는 이유와 복구 방법
 - SPI의 4선, CS, 모드(CPOL/CPHA)
 - UART·I2C·SPI를 언제 고를지
+- 차량 ECU 보드 안에서 이 버스들이 하는 일
+- OBD 값을 I2C OLED에 표시하는 실습, SPI-CAN 컨트롤러(MCP2515) 연결
 - 두 버스의 디버깅 체크리스트
 
 ## 4.1 I2C (Inter-Integrated Circuit)
@@ -96,7 +98,7 @@ START | 0x76+W | ACK | reg | ACK | repeated START | 0x76+R | ACK | data | NACK |
 
 - I2C는 핫스왑용이 아니다. 전원이 켜진 상태에서 커넥터를 뽑으면 버스가 잠기거나 장치가 상할 수 있다.
 - 5V 장치와 3.3V 장치를 섞으면 레벨 시프터가 필요하다. 풀업을 어느 전압에 거는지가 버스 전압을 결정한다.
-- 긴 선, 여러 장치, 약한 풀업이 겹치면 파형이 둥글어져 통신이 간헐적으로 실패한다. 이때는 로직 분석기로 SDA/SCL을 본다. 8장에서 도구 사용법을 다룬다.
+- 긴 선, 여러 장치, 약한 풀업이 겹치면 파형이 둥글어져 통신이 간헐적으로 실패한다. 이때는 로직 분석기로 SDA/SCL을 본다. 12장에서 도구 사용법을 다룬다.
 
 ## 4.2 SPI (Serial Peripheral Interface)
 
@@ -177,7 +179,150 @@ SPI에는 네 가지 모드가 있다. 클록의 idle 상태(CPOL)와 데이터�
 
 "정확한 요구가 없다면"이라는 문장은 입문 단계에서 특히 유용하다. 모든 선택을 최적화하려 하지 말고, 가장 흔한 기본값으로 시작한 뒤 병목이 보이면 바꾸면 된다.
 
-## 4.5 예시: 센서의 ID 레지스터 읽기
+## 4.5 차량 ECU 보드 안에서는
+
+OBD-II 포트에서 보이는 것은 CAN 버스다. I2C와 SPI는 그 아래, **ECU 보드 안쪽**에서 센서·메모리·주변 칩과 대화하는 데 쓰인다. 일반적인 ECU 보드는 다음과 같이 구성된다.
+
+| 구성 요소 | 역할 | 버스/인터페이스 |
+|---|---|---|
+| MCU | 제어 로직, 연산 | 내부 버스 |
+| CAN 컨트롤러 | CAN 프레임 생성·검사 | MCU 내장 또는 SPI |
+| CAN 트랜시버 | 논리 신호 ↔ 차동 CAN_H/L | CAN |
+| SPI 플래시 | 프로그램·캘리브레이션 데이터 | SPI |
+| EEPROM | 설정·적응값·식별 정보 | I2C 또는 SPI |
+| 센서 | 압력·온도·위치 | I2C, SPI, 아날로그 |
+| LIN 트랜시버 | 액추에이터·스위치 | LIN(단일 선) |
+| 전원 회로 | 12V → 5V/3.3V, 보호 | - |
+
+이 표는 **일반적인 구조**이지 쏘렌토 특정 ECU의 회로도가 아니다. ECU마다 칩과 배치가 다르고, 같은 기능도 다른 버스를 쓴다. 중요한 것은 "OBD 포트에서 CAN 프레임이 보인다"와 "ECU 보드 안에서 I2C/SPI가 쓰인다"가 **다른 계층**이라는 점이다.
+
+- OBD-II 포트의 6·14번 핀은 CAN_H/CAN_L이다. I2C의 SDA/SCL이나 SPI의 MOSI/MISO가 아니다.
+- OBD 포트의 나머지 핀은 제조사 재량이다. 어떤 핀이 I2C나 SPI로 쓰인다고 가정하고 프로빙하면 안 된다.
+- ECU를 열어 I2C/SPI를 직접 읽는 것은 이 책의 범위 밖이다. 보증·안전·ESD·밀봉 문제가 있고, 잘못 건드리면 ECU가 벽돌이 된다.
+- 진단 게이트웨이가 OBD 요청을 다른 버스로 넘겨 주는 경우가 있다. OBD 포트에 보이는 CAN 트래픽이 차량 전체 트래픽과 같다고 가정하지 않는다.
+
+즉, **차량 데이터를 읽는 입구는 CAN(OBD-II)이고, ECU 내부의 I2C/SPI는 제조사 영역**이다. 이 장의 I2C/SPI 지식은 차량용 대시보드, 센서 모듈, 벤치 실습에서 바로 쓸 수 있다.
+
+## 4.6 OBD 값을 I2C OLED에 표시하기
+
+차량 데이터를 읽어서 작은 OLED에 표시하는 구성은 입문 프로젝트로 좋다. 여기서는 Raspberry Pi와 SSD1306 128×64 I2C OLED를 쓴다. **차량 ECU에 직접 붙이는 것이 아니라, OBD 데이터를 받은 PC/Pi가 표시하는 구성**이다.
+
+### 배선
+
+```text
+Raspberry Pi              SSD1306 OLED
+3.3V  ──────────────────  VCC
+GND   ──────────────────  GND
+GPIO2 (SDA, pin 3) ─────  SDA
+GPIO3 (SCL, pin 5) ─────  SCL
+```
+
+- I2C 주소는 보통 `0x3C` 또는 `0x3D`다. 모듈의 주소 점퍼를 확인한다.
+- Pi의 I2C 버스는 3.3V다. 5V 전용 OLED 모듈을 직결하지 않는다.
+- 선이 길면 I2C 파형이 무너진다. 차량 안에서는 짧게, 필요하면 차폐한다.
+- 차량에 두고 쓰려면 Pi의 전원·발열·SD 카드 손상을 고려한다. 상용 완성품처럼 차량용 온도 범위를 보장하지 않는다.
+
+### 주소 확인
+
+```bash
+sudo apt install -y i2c-tools
+i2cdetect -y 1
+```
+
+`3c`가 보이면 배선과 전원의 절반은 확인된 것이다. 아무것도 안 보이면 4.1절의 순서(전원 → 접지 → SDA/SCL → 풀업 → 주소)로 돌아간다.
+
+### 코드
+
+```bash
+uv init obd-oled
+cd obd-oled
+uv add luma.oled
+```
+
+```python
+from luma.core.interface.serial import i2c
+from luma.core.render import canvas
+from luma.oled.device import ssd1306
+
+serial = i2c(port=1, address=0x3C)
+device = ssd1306(serial)
+
+
+def show(rpm: int, speed: int, coolant: float) -> None:
+    with canvas(device) as draw:
+        draw.text((0, 0), "SORENTO OBD", fill="white")
+        draw.text((0, 16), f"RPM   {rpm:6d}", fill="white")
+        draw.text((0, 32), f"SPEED {speed:4d} km/h", fill="white")
+        draw.text((0, 48), f"COOL  {coolant:5.1f} C", fill="white")
+
+
+if __name__ == "__main__":
+    # 7장의 ObdReader에서 받은 최신 값을 넣는다고 가정한다.
+    show(rpm=1726, speed=80, coolant=83.0)
+```
+
+- `luma.oled`의 API는 버전에 따라 조금 다를 수 있다. 설치한 버전의 문서를 확인한다.
+- 실제 차량에서는 7장의 `ObdReader`가 읽은 값을 1~5Hz로 넘긴다. OLED 갱신은 그보다 느리게(2~5Hz) 해도 충분하다.
+- I2C OLED가 없으면 같은 값을 `print()`로 출력하면서 대시보드 로직을 먼저 완성한다.
+
+이 예제의 핵심은 "OBD 데이터를 I2C 디스플레이에 그린다"는 **계층 분리**다. OBD 파싱은 7장, 표시는 4장의 I2C가 맡는다. 한쪽이 고장 나도 다른 쪽을 바꿔 끼울 수 있다.
+
+## 4.7 SPI로 CAN 컨트롤러 붙이기: MCP2515
+
+Raspberry Pi에는 CAN 컨트롤러가 없다. MCP2515는 SPI로 붙는 CAN 컨트롤러이고, 여기에 CAN 트랜시버를 연결하면 Pi가 CAN 버스에 참여할 수 있다. 차량 OBD-II를 ELM327로 읽는 것과 달리, **벤치에서 두 노드의 CAN을 직접 시험할 때** 유용하다.
+
+### 배선
+
+```text
+Raspberry Pi             MCP2515 모듈              CAN 트랜시버
+3.3V ──────────────────  VCC (3.3V 로직)          VCC
+GND  ──────────────────  GND                      GND
+GPIO11 (SCLK) ─────────  SCK
+GPIO10 (MOSI) ─────────  SI
+GPIO9  (MISO) ─────────  SO
+GPIO8  (CE0)  ─────────  CS
+GPIO25        ─────────  INT
+                         CANH ─────────────────── CAN_H ── 버스
+                         CANL ─────────────────── CAN_L ── 버스
+```
+
+- MCP2515의 논리 전원은 3.3V(모듈에 따라 5V 허용), 트랜시버는 5V인 제품이 많다. 모듈의 전압 표기를 확인한다.
+- 크리스탈이 8MHz인지 16MHz인지 확인한다. 아래 overlay의 `oscillator` 값과 맞춰야 한다.
+- 120Ω 종단은 **벤치 버스 양 끝**에만 둔다. 차량 OBD 버스에는 이미 종단이 있으므로 추가하면 안 된다.
+- SPI 모드 0, MSB first가 일반적이다. MCP2515 데이터시트의 타이밍을 확인한다.
+
+### Raspberry Pi 설정
+
+```bash
+# SPI 활성화
+sudo raspi-config nonint do_spi 0
+
+# /boot/firmware/config.txt 에 추가 (구버전은 /boot/config.txt)
+# dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25
+
+sudo reboot
+sudo ip link set can0 up type can bitrate 500000
+candump can0
+```
+
+- `oscillator=16000000`은 16MHz 크리스탈일 때다. 8MHz면 `8000000`으로 바꾼다.
+- `interrupt=25`는 INT를 연결한 GPIO 번호다. 배선과 맞춘다.
+- `ip link`가 실패하면 `dmesg`에서 MCP2515 probe 메시지를 본다. SPI 배선·CS·크리스탈·전원 순으로 확인한다.
+- `candump`에 프레임이 보이면 SPI와 CAN 물리 계층이 살아 있다는 뜻이다.
+
+### python-can으로 읽기
+
+```python
+import can
+
+with can.Bus(interface="socketcan", channel="can0") as bus:
+    while (msg := bus.recv(timeout=1.0)) is not None:
+        print(f"{msg.arbitration_id:03X} {msg.data.hex(' ')}")
+```
+
+이 구성은 5장의 CAN 실습과 12장의 도구 사용법으로 이어진다. ELM327은 차량 OBD 읽기에 편하고, MCP2515 + Pi는 벤치에서 원시 CAN을 직접 다루는 데 적합하다. **둘은 대체재가 아니라 용도가 다르다.**
+
+## 4.8 예시: 센서의 ID 레지스터 읽기
 
 I2C 센서를 처음 붙였을 때 가장 먼저 하는 일은 **칩 ID(WHO_AM_I 같은 레지스터) 읽기**다. 값이 데이터시트와 맞으면 배선·전원·주소·기본 통신이 살아 있다는 뜻이다.
 
@@ -198,7 +343,7 @@ I2C 센서를 처음 붙였을 때 가장 먼저 하는 일은 **칩 ID(WHO_AM_I
 
 SPI라면 CS를 low로 내리고 명령 바이트(예: 플래시의 `0x9F`)를 보낸 뒤 응답 바이트를 읽는다. 이때 CS가 트랜잭션 내내 low인지, SCLK의 모드가 맞는지, MISO가 high-Z로 떠 있지 않은지 확인한다.
 
-## 4.6 디버깅 체크리스트
+## 4.9 디버깅 체크리스트
 
 - [ ] 전원 전압과 공통 접지
 - [ ] I2C 풀업 존재/값, 버스 전압, 주소 충돌
@@ -223,6 +368,10 @@ SPI라면 CS를 low로 내리고 명령 바이트(예: 플래시의 `0x9F`)를 �
 | 선택 안 된 슬레이브가 MISO를 구동 | 버스 충돌 | high-Z 지원 확인 |
 | 긴 선/높은 클록 | 링잉, 크로스토크, 간헐 오류 | 선 짧게, 접지 가까이, 속도 낮춤 |
 | 라이브러리만 믿고 데이터시트 무시 | 초기화 순서/대기 시간 누락 | 데이터시트의 시퀀스 확인 |
+| OBD 포트 핀을 I2C/SPI로 가정 | 엉뚱한 핀 프로빙, ECU 손상 | 6/14번은 CAN. 나머지는 제조사 재량 |
+| 차량 CAN에 120Ω 추가 | 이미 종단된 버스에 병렬 저항 | 차량에는 추가하지 않는다. 벤치에서만 |
+| MCP2515 크리스탈/overlay 불일치 | `can0`이 안 생김, probe 실패 | oscillator 값과 실장 크리스탈 확인 |
+| I2C OLED를 5V로 직결 | Pi 핀 손상 | 3.3V 모듈인지 확인 |
 
 ## 장 요약
 
@@ -232,5 +381,8 @@ SPI라면 CS를 low로 내리고 명령 바이트(예: 플래시의 `0x9F`)를 �
 - SPI 모드(CPOL/CPHA)와 비트 순서를 데이터시트에 맞춘다. CS는 트랜잭션 동안 유지한다.
 - I2C는 ACK가 있고 반이중, SPI는 전이중이고 ACK가 없다. 이 차이가 디버깅 방법을 바꾼다.
 - 케이블 통신은 UART/RS-485/CAN, 보드 안 센서는 I2C, 보드 안 고속 장치는 SPI가 기본값이다.
+- 차량 ECU 보드 안에는 I2C/SPI/LIN이 있지만, OBD 포트에서 직접 보이는 것은 CAN이다. ECU 내부를 열어 읽는 것은 범위 밖이다.
+- OBD 값을 I2C OLED에 표시하는 구성은 "파싱"과 "표시"를 분리하는 좋은 실습이다.
+- MCP2515는 SPI-CAN 컨트롤러다. 크리스탈·overlay·종단·전원을 맞춰야 `can0`이 살아난다.
 
 다음 장에서는 보드 밖으로 나가 여러 노드가 한 쌍의 선을 공유하는 CAN을 다룬다. 우선순위 중재와 오류 상태는 웹의 요청/응답 모델과 상당히 다른 세계다.

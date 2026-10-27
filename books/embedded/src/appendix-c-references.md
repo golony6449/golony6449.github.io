@@ -47,6 +47,8 @@
 - Espressif, "ESP-IDF TWAI network example" — TWAI 네트워크, 120Ω 종단, 필터 예. <https://github.com/espressif/esp-idf/tree/master/examples/peripherals/twai/twai_network>
 - Espressif, "Arduino-ESP32 WebServer example" — `WebServer`, `server.on`, `handleClient`. <https://github.com/espressif/arduino-esp32/tree/master/libraries/WebServer/examples/HelloServer>
 - coryjfowler, "MCP_CAN_lib" — MCP2515 SPI-CAN 라이브러리, CS/INT·크리스탈 설정. <https://github.com/coryjfowler/MCP_CAN_lib>
+- Texas Instruments, "SN65HVD230 3.3V CAN transceiver" 데이터시트 — 3.3V 전원·핀 기능. <https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf>
+- Arduino, "UNO R3" — 우노 R3 핀아웃과 SPI 핀(11/12/13). <https://docs.arduino.cc/hardware/uno-rev3/>
 - cantools, "cantools documentation" — `database.load_file`, `decode_message`. <https://cantools.readthedocs.io/>
 
 ## C.5 안전·법·윤리

@@ -19,3 +19,4 @@
 - [부록 A. 용어집](appendix-a-glossary.md)
 - [부록 B. 웹 개념 대응표](appendix-b-web-map.md)
 - [부록 C. 참고 자료](appendix-c-references.md)
+- [부록 D. 트러블슈팅 사례집](appendix-d-troubleshooting.md)

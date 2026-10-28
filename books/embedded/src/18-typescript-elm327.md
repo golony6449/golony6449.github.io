@@ -57,7 +57,7 @@ Node 24.12부터 TypeScript의 **타입 제거(type stripping)** 가 안정 상�
 - Node는 `tsconfig.json`을 읽지 않는다. `paths` 별칭, 구버전 JavaScript로의 변환은 지원하지 않는다.
 - `enum`, `namespace`, 생성자 매개변수 프로퍼티처럼 **런타임 코드를 만들어 내는 문법**은 기본 모드에서 실행되지 않는다.
 - 그래서 `tsconfig.json`에 `erasableSyntaxOnly`를 켜 두면 "Node가 실행할 수 없는 문법"을 컴파일 단계에서 걸러 준다.
-- Node 20·22를 쓴다면 `tsx` 같은 로더를 쓰거나 `tsc`로 JavaScript를 만들어 실행한다. `serialport` 13은 Node 20 이상을 요구한다.
+- Node 22는 22.18.0부터 타입 제거가 기본으로 켜져 있어 `.ts`를 바로 실행할 수 있다(실험 기능 경고가 뜬다). 그보다 낮은 22나 Node 20이라면 `tsx` 같은 로더를 쓰거나 `tsc`로 JavaScript를 만들어 실행한다. `serialport` 13은 Node 20 이상을 요구한다.
 
 ## 18.2 프로젝트 준비
 
@@ -685,7 +685,7 @@ ELM327이 여러 PID를 한 줄로 조립해 주면 다음과 같은 응답이 �
 
 ```text
 00F
-0: 41 0C 00 00 0D 0A
+0: 41 0C 14 60 0D 0A
 1: 05 5F 11 2B 2F AA
 2: 42 39 4B
 ```
@@ -968,7 +968,7 @@ channel.stop();
 | `ATZ`가 `STOPPED` | 프롬프트 전에 입력 | 다시 보내거나 연결 재시작 |
 | `?`가 온다 | 명령 오타, 클론 미지원 | 명령 문자열 확인, `ATI`로 버전 확인 |
 | 포트가 안 보인다 | CH340 드라이버, 데이터 케이블 | 장치 관리자, 케이블 교체 |
-| Node가 `.ts`를 실행하지 못한다 | Node 24.12 미만 | Node 업그레이드 또는 `tsx` |
+| Node가 `.ts`를 실행하지 못한다 | Node 22.18.0 미만 | Node 업그레이드 또는 `tsx` |
 | socketcan이 로드되지 않는다 | Windows, vcan 미생성 | Linux/WSL2, `ip link` 확인 |
 
 ## 18.10 체크리스트

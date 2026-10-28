@@ -320,6 +320,24 @@ export async function queryPid(session, pid) {
 
 ### 화면에 표시하기
 
+15.2의 최소 페이지를 아래 마크업으로 바꾸고, 15.4의 `app.js`가 15.2의 예제를 대체한다고 하자. `v-*` 요소는 `render()`가 채운다.
+
+```html
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>OBD-II Web Serial</title>
+<button id="connect">연결</button>
+<button id="disconnect">해제</button>
+<p id="status">대기 중</p>
+<div>
+  <div><span>엔진 회전수</span> <span id="v-rpm">--</span> rpm</div>
+  <div><span>차속</span> <span id="v-speed">--</span> km/h</div>
+  <div><span>냉각수</span> <span id="v-coolant">--</span> °C</div>
+</div>
+<script type="module" src="./app.js"></script>
+```
+
 ```javascript
 import { Elm327Session, parsePid, queryPid } from "./elm327.js";
 

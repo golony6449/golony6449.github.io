@@ -79,7 +79,7 @@
 
 ### ASC
 
-python-can으로 만든 ASC 파일의 실제 줄은 다음과 같다.
+python-can으로 만든 ASC 파일의 형식은 다음과 같다. 요청과 응답을 함께 넣은 예다.
 
 ```text
 date Wed Oct 28 23:27:19.173 2026
@@ -88,7 +88,7 @@ internal events logged
 Begin Triggerblock Thu Jan 01 09:16:40.0 1970
  0.000000 Start of measurement
  0.000000 1  7DF             Rx   d 8 02 01 0C CC CC CC CC CC
- 0.100000 1  7E8             Rx   d 8 02 01 0C CC CC CC CC CC
+ 0.100000 1  7E8             Rx   d 8 04 41 0C 1A F8 00 00 00
 End TriggerBlock
 ```
 

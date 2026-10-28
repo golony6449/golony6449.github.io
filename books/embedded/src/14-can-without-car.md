@@ -144,27 +144,29 @@ Windows에는 Linux의 vcan 같은 기본 가상 CAN 인터페이스가 없다. 
 |---|---|---|
 | python-can `virtual` | 같은 파이썬 프로세스 안의 가상 버스 | 프로세스 밖으로 나가지 않는다 |
 | python-can `udp_multicast` | 같은 호스트/네트워크의 여러 프로세스 | UDP 멀티캐스트가 가능한 환경 필요, 전달 보장 없음 |
-| WSL2 + vcan | Linux와 같은 실습 | 기본 커널에 CAN/vcan이 없을 수 있다 |
+| WSL2 + vcan | Linux와 같은 실습 | 커널 버전에 따라 CAN/vcan 모듈이 없을 수 있다 |
 | USB-CAN 어댑터 | 실제 버스·벤치 | 드라이버·장비 필요 |
 | ELM327-emulator TCP | ELM327 계층 실습 | 실제 차량 ECU는 아니다 |
 
 ### WSL2에서 vcan이 되는가
 
-결론부터 말하면 **기본 WSL2 커널에 CAN/vcan이 포함되어 있다고 가정하지 않는다.** WSL 저장소에는 CAN 지원 요청이 열려 있고(2026-10 기준), 기본 커널에서 CAN이 빠져 있다는 보고가 있다. 먼저 WSL 안에서 확인한다.
+WSL2의 CAN/vcan 지원은 **커널 버전에 따라 다르다.** 2026-10 기준 6.18.y 커널 설정에는 `CONFIG_CAN=m`, `CONFIG_CAN_VCAN=m`이 있지만, 배포판에 모듈이 실제로 제공되는지는 별개다. 먼저 WSL 안에서 확인한다.
 
 ```bash
 uname -r
 sudo modprobe vcan
-ip link add dev vcan0 type vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set dev vcan0 up
+ip -details link show vcan0
 ```
 
-`modprobe: FATAL: Module vcan not found`가 나오면 기본 커널에는 모듈이 없다. 선택지는 세 가지다.
+`modprobe: FATAL: Module vcan not found`가 나오면 구버전·커스텀 커널이거나 모듈이 빠진 경우다. 선택지는 세 가지다.
 
 1. **python-can virtual로 Windows에서 연습한다.** 가장 간단하고, 이 장의 가짜 ECU 예제가 그대로 돈다.
 2. **WSL2 커스텀 커널을 빌드한다.** WSL2-Linux-Kernel 소스에서 `CONFIG_CAN_VCAN=y` 등을 켜고 커널을 교체한다. WSL 저장소의 사례처럼 동작하지만, 커널 빌드·교체는 초보 실습 범위를 넘는다. 운영 환경에서는 하지 않는다.
 3. **USB-CAN 어댑터를 WSL에 붙인다.** USB 패스스루와 드라이버 설정이 필요하고, 어댑터마다 난이도가 다르다. 이 책의 범위 밖이다.
 
-WSL2의 커널 버전과 CAN 지원 여부는 업데이트로 바뀔 수 있다. 책의 결론을 그대로 믿지 말고 `modprobe vcan`으로 확인한다.
+커널 설정에 CAN이 있어도 모듈이 제공되지 않을 수 있고, 반대로 구버전 커널에서는 아예 없을 수 있다. 책의 결론을 그대로 믿지 말고 `modprobe vcan`과 `ip link`로 확인한다.
 
 ### python-can virtual
 
@@ -272,7 +274,7 @@ class FakeEcu(threading.Thread):
         if service != 0x01:
             return None
         if pid == 0x00:
-            bitmap = (1 << 0) | (1 << 4) | (1 << 11) | (1 << 12) | (1 << 16) | (1 << 30)
+            bitmap = (1 << 31) | (1 << 27) | (1 << 20) | (1 << 19) | (1 << 15) | (1 << 1)
             return b"\x41\x00" + bitmap.to_bytes(4, "big")
         if pid == 0x0C:
             return b"\x41\x0C" + int(1726 * 4).to_bytes(2, "big")
@@ -317,7 +319,7 @@ class FakeEcu(threading.Thread):
 - 요청은 **Single Frame만** 처리한다. 실제 ECU처럼 ISO-TP로 긴 요청을 받지는 않는다.
 - VIN 응답은 20바이트라서 FF + CF 2개로 나눈다. FF를 보낸 뒤 테스터의 FC를 기다린다. FC가 없으면 CF를 보내지 않는다. 3장에서 본 흐름 제어의 실제 예제다.
 - `TESTVIN0000000000`은 17자짜리 가짜 VIN이다. 실제 VIN을 코드나 로그에 넣지 않는다.
-- `bitmap`은 지원 PID 비트마스크다. 비트 0이 PID 01, 비트 4가 PID 05, 비트 11이 PID 0C, 비트 12가 PID 0D, 비트 16이 PID 11, 비트 30이 PID 1F다.
+- `bitmap`은 지원 PID 비트마스크다. 4바이트 big-endian의 **첫 비트(MSB)가 PID 01**, **마지막 비트(LSB)가 PID 20**이다. 여기서는 01, 05, 0C, 0D, 11, 1F를 켠다. 7장의 `supported_pids()`로 풀면 같은 목록이 나온다.
 
 ### 요청과 파싱
 
@@ -395,7 +397,7 @@ if __name__ == "__main__":
 실행 결과는 다음과 같다.
 
 ```text
-01 00 -> 41 00 40 01 18 11
+01 00 -> 41 00 88 18 80 02
 01 0C -> 41 0C 1A F8  (1726.0)
 01 0D -> 41 0D 32  (50)
 01 05 -> 41 05 82  (90)
@@ -405,7 +407,7 @@ VIN -> TESTVIN0000000000
 ```
 
 - `data[2:]`는 `41 <PID>` 뒤의 데이터다. PID 0C라면 `1A F8`이 들어간다.
-- `41 00`의 `40 01 18 11`은 지원 PID 비트마스크다. 7장의 `decode_supported_pids`에 넣어 확인할 수 있다.
+- `41 00`의 `88 18 80 02`는 지원 PID 비트마스크다. 7장의 `supported_pids()`에 넣으면 `[01, 05, 0C, 0D, 11, 1F]`가 나온다.
 - VIN 응답은 `49 02 01` 뒤 17바이트다. `vin[3:]`이 VIN 문자열이다.
 - `time.monotonic()`은 벽시계가 아니라 단조 시계다. 재생·타임아웃처럼 경과 시간을 재는 곳에는 `time.time()`보다 이쪽이 안전하다.
 

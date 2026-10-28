@@ -85,7 +85,8 @@
 - python-can, "UDP Multicast" — 여러 프로세스 사이의 가상 버스, 전달 보장 없음. <https://python-can.readthedocs.io/en/stable/interfaces/udp_multicast.html>
 - python-can, "File IO" — `LogReader`/`Logger`, ASC/BLF/CSV/candump log/MF4/SQLite 지원. <https://python-can.readthedocs.io/en/stable/file_io.html>
 - Ircama, "ELM327-emulator" — ELM327 4.0.0, TCP/시리얼/SLCAN, `scenario car`, 다중 ECU·UDS·ISO-TP. <https://github.com/Ircama/ELM327-emulator>, <https://pypi.org/project/ELM327-emulator/>
-- Microsoft WSL, issue #11994 "CAN Bus/USBCAN(canable) support" — 기본 WSL2 커널의 CAN/vcan 지원 요청(열림). <https://github.com/microsoft/WSL/issues/11994>
+- Microsoft, WSL2-Linux-Kernel `arch/x86/configs/config-wsl` (linux-msft-wsl-6.18.y) — `CONFIG_CAN=m`, `CONFIG_CAN_VCAN=m` 확인. <https://github.com/microsoft/WSL2-Linux-Kernel/blob/linux-msft-wsl-6.18.y/arch/x86/configs/config-wsl>
+- Microsoft WSL, issue #11994 "CAN Bus/USBCAN(canable) support" — 구버전 WSL2 커널의 CAN/vcan 지원 요청. <https://github.com/microsoft/WSL/issues/11994>
 - Microsoft WSL, issue #5533 "Add SocketCAN support" — 커스텀 WSL 커널에서 `CONFIG_CAN_VCAN=y`로 vcan을 쓰는 사례. <https://github.com/microsoft/WSL/issues/5533>
 - MDN, "Web Serial API" — 보안 컨텍스트, 사용자 제스처, `requestPort()`, readable/writable. <https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API>
 - MDN, "Serial: requestPort()" — USB/Bluetooth 서비스 클래스 필터, `allowedBluetoothServiceClassIds`. <https://developer.mozilla.org/en-US/docs/Web/API/Serial/requestPort>

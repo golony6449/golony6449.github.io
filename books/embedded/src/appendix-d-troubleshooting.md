@@ -117,7 +117,7 @@ DTC 삭제와 쓰기 서비스의 위험은 9장에서 자세히 다룬다. 이 
 | 증상 | 원인 후보 | 확인 방법 | 조치 |
 |---|---|---|---|
 | vcan에서 프레임이 안 보임 | 인터페이스 `DOWN`, 이름 불일치, 모듈 미로드 | `ip -details link show vcan0`, `dmesg` | `modprobe vcan`, `ip link add`, `ip link set up` |
-| `modprobe vcan` 실패 | WSL2 기본 커널에 모듈 없음 | `uname -r`, WSL 이슈 | python-can virtual로 대체, 필요하면 커스텀 커널 |
+| `modprobe vcan` 실패 | 구버전·커스텀 커널이거나 모듈 미탑재 | `uname -r`, WSL 커널 설정 | python-can virtual로 대체, 필요하면 커스텀 커널 |
 | virtual 버스에서 두 프로세스가 안 통함 | virtual은 프로세스 안에서만 동작 | 두 프로그램의 채널·프로세스 확인 | `udp_multicast`, vcan, 실제 인터페이스 |
 | 가짜 ECU가 응답하지 않음 | 채널 불일치, 스레드 미시작, 요청 주소 오류 | 양쪽 `channel`, `ecu.start()`, `0x7DF` 확인 | 채널 통일, 스레드 시작, 주소 확인 |
 | 다중 프레임이 FF만 옴 | FC 미송신, STmin/BS 불일치 | FF 후 `30 00 00` 송신 여부 | FC 송신, 타임아웃·버퍼 정리 |

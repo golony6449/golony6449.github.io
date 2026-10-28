@@ -148,9 +148,17 @@ finally:
 ```python
 import can
 
+messages = [
+    can.Message(
+        timestamp=1000.0,
+        arbitration_id=0x7DF,
+        is_extended_id=False,
+        data=bytes.fromhex("02 01 0C CC CC CC CC CC"),
+    )
+]
 logger = can.Logger("capture.asc")
 try:
-    for msg in bus:
+    for msg in messages:
         logger(msg)
 finally:
     logger.stop()
@@ -197,6 +205,14 @@ BO_ 256 EngineData: 8 ECU
 ```python
 import cantools
 
+dbc_text = """VERSION ""
+NS_ :
+BS_:
+BU_: ECU
+BO_ 256 EngineData: 8 ECU
+ SG_ RPM : 0|16@1+ (0.25,0) [0|16383.75] "rpm" ECU
+ SG_ Speed : 16|8@1+ (1,0) [0|255] "km/h" ECU
+"""
 db = cantools.database.load_string(dbc_text, "dbc")
 msg = db.get_message_by_name("EngineData")
 

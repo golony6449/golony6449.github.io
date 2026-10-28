@@ -243,7 +243,7 @@ export function demoValues(t = Date.now()): PidValues {
 }
 ```
 
-- `this.first`일 때 타임아웃을 12초로 준다. `ATSP0` 뒤 첫 PID 요청은 `SEARCHING...`으로 오래 걸릴 수 있다. 이후에는 1.5초면 충분하다.
+- `this.first`일 때 타임아웃을 12초로 준다. `ATSP0` 뒤 첫 PID 요청은 `SEARCHING...`으로 오래 걸릴 수 있다. 이후에는 1.5초면 충분하지만, `7F xx 78`(응답 대기)이 오면 클라이언트가 6초로 늘린다.
 - `wait`는 `intervalMs - 경과 시간`이다. 폴링이 1초를 넘으면 0이 되어 바로 다음 요청을 보낸다. 이때 실제 주기는 1초보다 길어진다. **주기를 보장하는 것이 아니라, 겹치지 않게 하는 것**이 목적이다.
 - `NO DATA`는 빈 값으로 표본을 만든다. 통신 오류가 아니므로 재연결하지 않는다. 화면은 `--`를 보여 주고, 상태는 "실시간"으로 둔다.
 - 어댑터 오류(`UNABLE TO CONNECT`, `BUFFER FULL` 등)가 3번 연속이면 `onFatal`로 세션을 끝낸다. 한 번의 `?`로 재연결하지 않기 위한 임계값이다.
@@ -739,7 +739,13 @@ const SPECS = {
 const GAUGES = ["rpm", "speed", "coolant"];
 const DIGITS = ["throttle", "fuel", "voltage"];
 const MAX_POINTS = 180;
-const state = { imperial: false, latest: null, history: [], lastTs: 0, hoverIndex: -1 };
+const state = {
+  imperial: false,
+  latest: null,
+  history: [],
+  lastTs: 0,
+  hoverIndex: -1,
+};
 
 const statusEl = document.getElementById("status");
 const statusText = document.getElementById("status-text");
@@ -1231,15 +1237,27 @@ async function runDevice(deviceMode: string, signal: AbortSignal): Promise<void>
       client = new Elm327Client(transport);
       const info = await initializeElm(client);
       console.log(`[obd] 연결됨 protocol=${info.protocol} battery=${info.battery}`);
-      backoff = 1000;
+      let healthy = 0;
       await new Promise<void>((resolve) => {
-        const collector = new Collector(client ?? null, onSample, {
-          intervalMs,
-          onFatal: (error) => {
-            console.error(`[obd] 수집 중단: ${error.message}`);
-            resolve();
+        const collector = new Collector(
+          client ?? null,
+          (sample) => {
+            onSample(sample);
+            if (sample.ok) {
+              healthy += 1;
+              if (healthy >= 5) backoff = 1000;
+            } else {
+              healthy = 0;
+            }
           },
-        });
+          {
+            intervalMs,
+            onFatal: (error) => {
+              console.error(`[obd] 수집 중단: ${error.message}`);
+              resolve();
+            },
+          },
+        );
         const onAbort = () => {
           collector.stop();
           resolve();
@@ -1294,7 +1312,7 @@ idle → connecting → initializing → streaming
 - **connecting**: `SerialTransport.open` 또는 `TcpTransport.open`.
 - **initializing**: `ATZ`·`ATE0`·`ATL0`·`ATSP0`·`ATDPN`·`ATRV`. 실패하면 세션을 버리고 백오프한다.
 - **streaming**: `Collector`가 PID를 읽는다. `onFatal`이나 전송 계층 `close`가 오면 streaming을 끝낸다.
-- **backoff**: 1초에서 시작해 2배씩, 최대 30초. 0.8~1.2배 지터를 준다. 여러 대시보드가 동시에 재연결해도 같은 순간에 몰리지 않게 한다.
+- **backoff**: 1초에서 시작해 2배씩, 최대 30초. 0.8~1.2배 지터를 준다. 여러 대시보드가 동시에 재연결해도 같은 순간에 몰리지 않게 한다. **초기화 성공만으로는 리셋하지 않는다.** 5개 표본이 연속으로 성공해 링크가 실제로 동작한다는 증거가 있을 때 1초로 되돌린다. 초기화는 되지만 수집이 바로 실패하는 세션이 1초 간격으로 무한 재시도하지 않게 하기 위해서다.
 - **정상 종료**: `SIGINT`/`SIGTERM` → `AbortController` → 수집기 중지 → 세션 루프 종료 → HTTP 서버 닫기 → `store.close()`(남은 배치 flush) → 전송 계층 닫기.
 
 ### 재연결에서 구분할 것
@@ -1454,7 +1472,7 @@ curl -s http://127.0.0.1:8787/api/snapshot
 
 - 수집기·저장소·서버·표현을 분리하면 하드웨어 없이 각 계층을 시험할 수 있다.
 - `setInterval` 대신 완료 후 대기하는 루프를 써서 ELM327 요청이 겹치지 않게 한다.
-- 첫 PID 요청은 `SEARCHING...` 때문에 12초, 이후에는 1.5초 타임아웃을 준다.
+- 첫 PID 요청은 `SEARCHING...` 때문에 12초, 이후에는 1.5초 타임아웃을 준다. `7F xx 78`이 오면 6초로 늘린다.
 - SQLite에는 PID 표본만 배치로 저장하고, 2초 또는 120행마다 커밋한다. 보존 기간을 둔다.
 - SSE는 단방향 텔레메트리에 충분하다. `retry`, `id`, 하트비트, `no-transform`을 설정한다.
 - `res.write()`가 `false`면 느린 클라이언트에 보내지 않고 `drain`까지 기다린다. 최신값만 남긴다.

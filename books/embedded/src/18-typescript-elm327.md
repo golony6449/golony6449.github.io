@@ -390,7 +390,22 @@ export class Elm327Client {
     }
     if (!this.pending) return;
     if (line.trim() === this.pending.command) return; // ATE1일 때의 에코
+    if (/^7F [0-9A-Fa-f]{2} 78$/.test(line.trim())) {
+      this.rearmTimeout(6000);
+    }
     this.pending.lines.push(line.trim());
+  }
+
+  private rearmTimeout(ms: number): void {
+    const pending = this.pending;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pending.timer = setTimeout(() => {
+      this.pending = null;
+      this.closed = true;
+      pending.reject(new Elm327Error(`${pending.command} 응답 시간 초과 (${ms}ms)`, "timeout"));
+      void this.transport.close();
+    }, ms);
   }
 
   private finishResponse(): void {
@@ -468,7 +483,7 @@ ELM327은 요청과 응답이 한 줄로 오가는 반이중 장치다. `ATSP0`�
 | `?` | 명령 오타·미지원 명령 | `error` |
 | `7F xx 78` | ECU가 "잠시 기다려 달라"는 응답(Response Pending) | 오류 아님. 최종 응답을 기다림 |
 
-`7F xx 78`은 UDS/OBD의 부정 응답처럼 보이지만, "응답 대기"다. ELM327 v2.1 이상은 이 줄을 받으면 타임아웃을 최대 5초까지 늘린다(데이터시트 p.44). 호스트 타임아웃을 1.5초로 고정해 두면, 응답 대기 중인 ECU에서 시간 초과가 날 수 있다. 그래서 이 책의 수집기는 첫 요청에 12초, 이후 1.5초를 준다.
+`7F xx 78`은 UDS/OBD의 부정 응답처럼 보이지만, "응답 대기"다. ELM327 v2.1 이상은 이 줄을 받으면, PP 2A bit 2가 설정된 경우(기본값) 타임아웃을 5초까지 늘린다(데이터시트 p.45). 이 책의 클라이언트는 `7F xx 78`을 보면 호스트 타이머를 6초로 다시 무장한다. 그렇지 않고 호스트 타임아웃을 1.5초로 고정해 두면, 응답 대기 중인 ECU에서 시간 초과가 날 수 있다. 그래서 이 책의 수집기는 첫 요청에 12초(프로토콜 검색), 이후 1.5초를 주되 `7F xx 78`에서 6초로 늘린다.
 
 ### 타임아웃이 나면 연결을 끊는 이유
 
@@ -524,6 +539,26 @@ export const PIDS = {
     digits: 0,
     bytes: 1,
     decode: (data) => data[0] - 40,
+  },
+  load: {
+    pid: 0x04,
+    label: "계산된 엔진 부하",
+    unit: "%",
+    min: 0,
+    max: 100,
+    digits: 1,
+    bytes: 1,
+    decode: (data) => (data[0] * 100) / 255,
+  },
+  map: {
+    pid: 0x0b,
+    label: "흡기 매니폴드 절대압",
+    unit: "kPa",
+    min: 0,
+    max: 255,
+    digits: 0,
+    bytes: 1,
+    decode: (data) => data[0],
   },
   throttle: {
     pid: 0x11,
@@ -601,20 +636,22 @@ export function responseBytes(lines: readonly string[]): Uint8Array {
  */
 export function parseMode01(lines: readonly string[], requested: readonly PidKey[]): PidValues {
   const bytes = responseBytes(lines);
+  const header = lines.map((line) => line.trim()).find((line) => /^[0-9A-Fa-f]{3}$/.test(line));
+  const limit = header ? Math.min(bytes.length, Number.parseInt(header, 16)) : bytes.length;
   const wanted = new Set<PidKey>(requested);
   const values: PidValues = {};
   let index = 0;
-  while (index < bytes.length) {
+  while (index < limit) {
     if (bytes[index] !== 0x41) {
       index += 1;
       continue;
     }
     index += 1;
-    while (index < bytes.length) {
+    while (index < limit) {
       const found = BY_NUMBER.get(bytes[index]);
       if (!found) break;
       const end = index + 1 + found.spec.bytes;
-      if (end > bytes.length) break;
+      if (end > limit) break;
       if (wanted.has(found.key)) {
         const raw = found.spec.decode(bytes.subarray(index + 1, end));
         values[found.key] = Number(raw.toFixed(found.spec.digits));
@@ -653,13 +690,13 @@ ELM327이 여러 PID를 한 줄로 조립해 주면 다음과 같은 응답이 �
 2: 42 39 4B
 ```
 
-1. `00F`는 ISO-TP 메시지 길이(15바이트)다. PID 데이터가 아니다.
+1. `00F`는 ISO-TP 메시지 길이(15바이트)다. PID 데이터가 아니다. `parseMode01`은 이 값을 `limit`로 써서 15바이트까지만 읽는다.
 2. `0:`, `1:`, `2:`는 ELM327이 붙인 줄 번호다. 콜론 뒤만 이어 붙인다.
 3. `41`은 Mode 01 긍정 응답이다. 그 뒤부터 `PID + 데이터`가 반복된다.
 4. PID 번호로 `PidSpec`을 찾아 `bytes`만큼 읽고, 다음 PID로 이동한다.
 5. 응답에 없는 PID는 `values`에 들어가지 않는다. `undefined`를 0으로 바꾸지 않는다.
 
-`parseMode01`은 `requested`에 없는 PID도 응답에 있으면 파싱한다. 호출자가 요청한 것만 쓰려면 `wanted` 검사를 그대로 두면 된다. **응답 순서를 요청 순서로 가정하지 않는 것**이 핵심이다. ELM327 데이터시트도 "응답 순서는 요청 순서와 같을 필요가 없다"고 적는다(p.44).
+`parseMode01`은 `requested`에 없는 PID도 표에 있으면 파싱한다. 호출자가 요청한 것만 쓰려면 `wanted` 검사를 그대로 두면 된다. 표에 없는 PID를 만나면 그 지점에서 멈춘다. **응답 순서를 요청 순서로 가정하지 않는 것**이 핵심이다. ELM327 데이터시트도 "응답 순서는 요청 순서와 같을 필요가 없다"고 적는다(p.45).
 
 ### 실행 예제
 
@@ -815,7 +852,7 @@ ELM327은 요청을 보낸 뒤 최대 `AT ST`만큼 기다리고, **응답을 �
 
 ### 여러 PID를 한 요청에
 
-CAN(ISO 15765-4)에서는 한 요청에 **최대 6개 PID**를 넣을 수 있다. 응답은 한 메시지에 모여 오고, 순서는 요청과 다를 수 있다(데이터시트 p.44). 7장의 쏘렌토 실차 기록에서도 6개 PID, 7개 항목을 한 요청으로 묶어 0.09~0.11초 주기로 읽었다.
+CAN(ISO 15765-4)에서는 한 요청에 **최대 6개 PID**를 넣을 수 있다. 응답은 한 메시지에 모여 오고, 순서는 요청과 다를 수 있다(데이터시트 p.45). 7장의 쏘렌토 실차 기록에서도 6개 PID, 7개 항목을 한 요청으로 묶어 0.09~0.11초 주기로 읽었다.
 
 ```text
 >01 0C 0D 05 11 2F 42
@@ -1038,7 +1075,7 @@ Windows 노트북에서 다음을 하려 한다. 각각 어떤 도구를 쓰는�
 2. `0x44=68`, `68−40=28°C`.
 3. `0x21=33 kPa`.
 4. `0x17B8=6072`, `6072/4=1518 rpm`.
-5. `00A`는 ISO-TP 메시지 길이 10바이트다. 마지막 `00 00 00`은 8바이트 프레임을 채우는 패딩이며, 길이 10바이트 이후는 해석하지 않는다.
+5. `00A`는 ISO-TP 메시지 길이 10바이트다. `parseMode01`은 이 값을 `limit`로 써서 10바이트까지만 읽는다. 마지막 `00 00 00`은 8바이트 프레임을 채우는 패딩이며 해석하지 않는다. 이 응답은 `parseMode01(lines, ["load", "coolant", "map", "rpm"])`로 확인할 수 있다.
 
 ### 3.
 

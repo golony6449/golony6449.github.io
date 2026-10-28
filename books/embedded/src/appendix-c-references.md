@@ -1,6 +1,6 @@
 # 부록 C. 참고 자료
 
-이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-27이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
+이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-28이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
 
 ## C.1 OBD-II와 차량 진단
 
@@ -76,3 +76,32 @@
 - ISO 11898-1/-2 — CAN data link layer / high-speed physical layer.
 
 표준의 조항 번호·최신 개정판은 구입 시점에 확인한다. 이 책의 `확인 필요` 표시는 표준 원문이나 제조사 문서로 확정하지 못한 값에 남아 있다.
+
+## C.8 가상 CAN·브라우저·테스트·로그
+
+- Linux kernel, "SocketCAN" — vcan 생성·제거, CAN 네트워크 인터페이스, 비트 타이밍. <https://www.kernel.org/doc/html/latest/networking/can.html> (C.2에 같은 출처)
+- linux-can, "can-utils" — `candump`, `cansend`, `cangen`, `canplayer`, `can-calc-bit-timing`, `asc2log`/`log2asc`. <https://github.com/linux-can/can-utils> (C.2에 같은 출처)
+- python-can, "Virtual" — virtual 인터페이스가 같은 파이썬 프로세스 안에서만 동작한다는 설명과 예제. <https://python-can.readthedocs.io/en/stable/interfaces/virtual.html>
+- python-can, "UDP Multicast" — 여러 프로세스 사이의 가상 버스, 전달 보장 없음. <https://python-can.readthedocs.io/en/stable/interfaces/udp_multicast.html>
+- python-can, "File IO" — `LogReader`/`Logger`, ASC/BLF/CSV/candump log/MF4/SQLite 지원. <https://python-can.readthedocs.io/en/stable/file_io.html>
+- Ircama, "ELM327-emulator" — ELM327 4.0.0, TCP/시리얼/SLCAN, `scenario car`, 다중 ECU·UDS·ISO-TP. <https://github.com/Ircama/ELM327-emulator>, <https://pypi.org/project/ELM327-emulator/>
+- Microsoft WSL, issue #11994 "CAN Bus/USBCAN(canable) support" — 기본 WSL2 커널의 CAN/vcan 지원 요청(열림). <https://github.com/microsoft/WSL/issues/11994>
+- Microsoft WSL, issue #5533 "Add SocketCAN support" — 커스텀 WSL 커널에서 `CONFIG_CAN_VCAN=y`로 vcan을 쓰는 사례. <https://github.com/microsoft/WSL/issues/5533>
+- MDN, "Web Serial API" — 보안 컨텍스트, 사용자 제스처, `requestPort()`, readable/writable. <https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API>
+- MDN, "Serial: requestPort()" — USB/Bluetooth 서비스 클래스 필터, `allowedBluetoothServiceClassIds`. <https://developer.mozilla.org/en-US/docs/Web/API/Serial/requestPort>
+- MDN, "SerialPort: open()" — `baudRate` 필수, 8N1 기본값. <https://developer.mozilla.org/en-US/docs/Web/API/SerialPort/open>
+- MDN, "Web Bluetooth API" — BLE GATT, 보안 컨텍스트, 사용자 제스처. <https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API>
+- MDN browser-compat-data, `api/Serial.json`, `api/Bluetooth.json` — 2026-10 기준 브라우저 지원 버전. <https://github.com/mdn/browser-compat-data>
+- Microchip, "AN754: Understanding Microchip's CAN Module Bit Timing" — TQ, SyncSeg/PropSeg/PS1/PS2, 샘플 포인트, SJW. <https://ww1.microchip.com/downloads/en/Appnotes/00754.pdf>
+- Kvaser, "CAN Protocol Tutorial" — 오류 프레임, TEC +8, ACK 오류와 Error Passive, 파형. <https://www.kvaser.com/can-protocol-tutorial/>
+- Bosch, "CAN Specification Version 2.0" (1991) — 오류 카운터·오류 프레임·스터핑의 원전. 공개 PDF 사본이 여러 곳에 있으나, 인용은 원문 기준.
+- CiA, "CAN XL" — 1~2048바이트, 11비트 priority ID + 32비트 AF, PCRC/FCRC, ISO 11898-1:2024, SIC XL/PWM 20Mbps+. <https://www.can-cia.org/can-knowledge/can-xl>
+- ISO, "ISO 11898-1:2024 Road vehicles — Controller area network (CAN)" — CAN CC/FD/XL 데이터링크 계층 표준(유료).
+- IEEE, "802.3bw-2015 100BASE-T1", "802.3bp-2016 1000BASE-T1", "802.3cg-2019 10BASE-T1S" — 차량용 이더넷 PHY 표준(유료).
+- AUTOSAR, "SOME/IP Protocol Specification" — RPC·이벤트·직렬화, UDP/TCP 바인딩. <https://www.autosar.org/fileadmin/standards/R22-11/FO/AUTOSAR_PRS_SOMEIPProtocol.pdf>
+- ISO, "ISO 13400-2:2019 Diagnostic communication over Internet Protocol (DoIP)" — IP 기반 진단, TCP/UDP 13400(유료).
+- asammdf, "asammdf documentation" — MDF4 읽기/쓰기, 채널·단위·메타데이터. <https://asammdf.readthedocs.io/en/master/>
+- InfluxData, "Line protocol" — measurement/tag/field/timestamp, 카디널리티. <https://docs.influxdata.com/influxdb/v2/reference/syntax/line-protocol/>
+- SQLite, "SQLite Documentation" — 파일 DB, WAL, SQL. <https://www.sqlite.org/docs.html>
+- pytest, "pytest documentation" — fixture, parametrize, approx. <https://docs.pytest.org/en/stable/>
+- Wikipedia, "Hardware-in-the-loop simulation" — plant simulation, 실시간성, ECU·I/O. <https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation>

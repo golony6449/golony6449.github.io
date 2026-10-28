@@ -691,7 +691,7 @@ uv run python obd_dashboard.py --demo
 uv run python obd_dashboard.py --port COM5 --baud 38400
 ```
 
-브라우저에서 <http://127.0.0.1:8000>을 연다. 실제 차량에서는 `ATZ`·`ATSP0` 로그가 콘솔에 찍히고, PID 읽기가 시작된다.
+브라우저에서 <http://127.0.0.1:8000>을 연다. 실제 차량에서는 `ATZ`·`ATSP0` 로그가 콘솔에 찍히고, PID 읽기가 시작된다. 차량 없이 PID 요청·ISO-TP 조립까지 시험하려면 14장의 가짜 ECU나 ELM327-emulator를 붙인다. `--demo`는 화면·UI만 시험하고, 실제 요청 경로는 타지 않는다.
 
 ### 코드에서 눈여겨볼 점
 

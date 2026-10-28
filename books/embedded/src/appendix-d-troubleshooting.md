@@ -111,3 +111,24 @@ DTC 삭제와 쓰기 서비스의 위험은 9장에서 자세히 다룬다. 이 
 - 값이 이상하면 공식·길이·바이트 순서·센서 유무를 본다.
 - 차량에서는 전원·접지·종단을 먼저, 코드를 나중에 본다.
 - 읽기 전용·정차·개인정보 제거는 문제 해결 중에도 유지한다.
+
+## D.8 가상 버스·브라우저·로그
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| vcan에서 프레임이 안 보임 | 인터페이스 `DOWN`, 이름 불일치, 모듈 미로드 | `ip -details link show vcan0`, `dmesg` | `modprobe vcan`, `ip link add`, `ip link set up` |
+| `modprobe vcan` 실패 | WSL2 기본 커널에 모듈 없음 | `uname -r`, WSL 이슈 | python-can virtual로 대체, 필요하면 커스텀 커널 |
+| virtual 버스에서 두 프로세스가 안 통함 | virtual은 프로세스 안에서만 동작 | 두 프로그램의 채널·프로세스 확인 | `udp_multicast`, vcan, 실제 인터페이스 |
+| 가짜 ECU가 응답하지 않음 | 채널 불일치, 스레드 미시작, 요청 주소 오류 | 양쪽 `channel`, `ecu.start()`, `0x7DF` 확인 | 채널 통일, 스레드 시작, 주소 확인 |
+| 다중 프레임이 FF만 옴 | FC 미송신, STmin/BS 불일치 | FF 후 `30 00 00` 송신 여부 | FC 송신, 타임아웃·버퍼 정리 |
+| ELM327-emulator 연결 거부 | 에뮬레이터 미실행, 포트 충돌 | `python -m elm -s car -n 35000` 실행 로그 | 포트 변경, 방화벽 확인 |
+| 에뮬레이터 값이 쏘렌토와 다름 | `scenario car`는 Toyota 시나리오 | `ATDPN`, 시나리오 문서 | AT/PID 파싱 시험용으로만 사용 |
+| `navigator.serial` 없음 | 비보안 컨텍스트, 미지원 브라우저 | 주소창 `https`/`localhost`, `'serial' in navigator` | HTTPS·localhost, Chrome/Edge/Firefox 151+ |
+| 포트 선택 창이 안 뜸 | 사용자 제스처 밖 호출 | 클릭 핸들러 안에서 호출했는지 | 버튼 클릭 이벤트에서 `requestPort()` |
+| 응답이 잘리거나 섞임 | 청크 경계, `>` 전 반환, 동시 명령 | 파서 버퍼, `busy` 플래그 | 리더 하나, 프롬프트까지 읽기, 명령 큐 |
+| BLE 기기가 목록에 없음 | 클래식 SPP, BLE 아님 | 제품 스펙, `requestDevice()` 목록 | BLE 어댑터 사용, SPP는 OS COM 포트+Web Serial |
+| BLE 응답이 끊김 | notify 미설정, MTU, 쓰기 방식 | `startNotifications()`, GATT properties | notify 켜기, `writeWithoutResponse`, 타임아웃 |
+| 로그 재생이 안 됨 | 인터페이스 이름 불일치, 형식 오류 | `can.LogReader` 확장자, `canplayer` assignment | 인터페이스 맞추기, 형식 변환 |
+| 로그에 구멍 | 백프레셔·드롭, 회전 중 유실 | 드롭 카운터, 파일 크기·시각 | 링 버퍼, 원자적 회전, 드롭 메트릭 |
+| DB 질의가 느림 | 인덱스 없음, 행 수 많음 | `EXPLAIN QUERY PLAN` | `(can_id, ts)` 인덱스, 버킷·보존 정책 |
+| InfluxDB 시리즈 폭증 | VIN·세션 ID를 태그로 사용 | 시리즈 카디널리티 | 낮은 카디널리티 태그, 별칭/해시 |

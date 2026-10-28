@@ -343,12 +343,16 @@ export class SampleStore {
       return;
     }
     const rows = this.pending.splice(0, this.pending.length);
-    this.db.exec("BEGIN IMMEDIATE");
     try {
+      this.db.exec("BEGIN IMMEDIATE");
       for (const row of rows) this.insert.run(row.ts, row.key, row.value, row.unit);
       this.db.exec("COMMIT");
     } catch (error) {
-      this.db.exec("ROLLBACK");
+      try {
+        this.db.exec("ROLLBACK");
+      } catch {
+        // 트랜잭션이 시작되지 않았으면 롤백할 것도 없다.
+      }
       this.pending.unshift(...rows);
       throw error;
     }
@@ -481,7 +485,7 @@ export function createDashboardServer(options: DashboardOptions): DashboardServe
     history: DashboardOptions["history"],
   ): void {
     const key = url.searchParams.get("key") ?? "rpm";
-    if (!(key in PIDS)) {
+    if (!Object.hasOwn(PIDS, key)) {
       sendJson(res, { error: "unknown key" }, 400);
       return;
     }

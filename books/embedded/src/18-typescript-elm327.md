@@ -390,7 +390,7 @@ export class Elm327Client {
     }
     if (!this.pending) return;
     if (line.trim() === this.pending.command) return; // ATE1일 때의 에코
-    if (/^7F [0-9A-Fa-f]{2} 78$/.test(line.trim())) {
+    if (/^7F ?[0-9A-Fa-f]{2} ?78$/.test(line.trim())) {
       this.rearmTimeout(6000);
     }
     this.pending.lines.push(line.trim());

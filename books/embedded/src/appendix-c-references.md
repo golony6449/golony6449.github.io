@@ -121,3 +121,34 @@
 - MDN, "EventSource" — `text/event-stream`, 단방향 스트림, HTTP/1.1 연결 수 제한. <https://developer.mozilla.org/en-US/docs/Web/API/EventSource>
 - MDN, "Using server-sent events" — `data`/`id`/`retry` 필드, 주석(`:`) keep-alive. <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>
 - Ircama, "ELM327-emulator" — TCP `-n 35000`, `scenario car`, 다중 PID, Windows에서 com0com 없이 TCP 사용. <https://github.com/Ircama/ELM327-emulator> (C.8에 같은 출처)
+
+## C.10 펌웨어·FreeRTOS·Rust
+
+접속일은 2026-10-29이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)과 v5.4를 함께 확인했다. 이 책의 13·15장 코드는 v5.x의 legacy TWAI API를 기준으로 한다.
+
+- Espressif, "ESP-IDF v5.4 TWAI" — legacy `driver/twai.h` API, 드라이버 상태, RX 큐, 경보 플래그, `twai_initiate_recovery()`, 상태 정보. <https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/peripherals/twai.html>
+- Espressif, "ESP-IDF TWAI (stable)" — v6.x의 `twai_node_*` API, 콜백 기반 수신, `twai_node_recover()`, 버스오프 복구. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/twai.html>
+- Espressif, "FreeRTOS (IDF)" — `xTaskCreatePinnedToCore`, 스택 바이트 단위, `uxTaskGetStackHighWaterMark`, `xTaskDelayUntil`, SMP 스케줄링. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/freertos_idf.html>
+- Espressif, "FreeRTOS Overview" — ESP-IDF FreeRTOS 구성, 시작 태스크 우선순위, 힙 통합. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/freertos.html>
+- Espressif, "Watchdogs" — Task Watchdog Timer(TWDT) `esp_task_wdt_init/add/reset/delete`, Interrupt Watchdog. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/wdts.html>
+- Espressif, "Sleep Modes" — deep/light sleep, timer/touch/ext0/ext1/ULP 깨우기, RTC GPIO 신호 폭. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/sleep_modes.html>
+- Espressif, "ESP32 Series Datasheet v5.3" — 전력 모드 표(light sleep 0.8mA, deep sleep 10µA, ULP 150µA, hibernation 5µA). <https://documentation.espressif.com/esp32_datasheet_en.pdf>
+- Texas Instruments, "SN65HVD230/231/232 3.3-V CAN Bus Transceivers" (SLOS346O, 2018) — standby 370µA 일반/600µA 최대, 정상 10mA 일반/17mA 최대, Rs 핀, wake 0.55µs. <https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf>
+- Wikipedia, "On-board diagnostics" — OBD-II 16핀 커넥터, 16번 배터리 전원, 6/14번 CAN. <https://en.wikipedia.org/wiki/On-board_diagnostics> (C.1에 같은 출처)
+- FreeRTOS, "FreeRTOS-Kernel-Book ch07" — 큐 생성·복사, `xQueueSendFromISR`, `pxHigherPriorityTaskWoken`, `portYIELD_FROM_ISR`. <https://github.com/FreeRTOS/FreeRTOS-Kernel-Book/blob/main/ch07.md>
+- FreeRTOS, "FreeRTOS-Kernel-Book ch08" — 뮤텍스, 우선순위 역전·상속, 중첩 뮤텍스, 게이트키퍼 태스크. <https://github.com/FreeRTOS/FreeRTOS-Kernel-Book/blob/main/ch08.md>
+- FreeRTOS, "queue.h" — 큐 API 선언과 문서 주석. <https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/include/queue.h>
+- cppreference, "volatile" — `volatile`의 보장과 한계(원자성·동기화·메모리 순서 없음). <https://en.cppreference.com/w/c/language/volatile>
+- cppreference, "memory_order" — relaxed/acquire/release/acq_rel/seq_cst, SPSC 링 버퍼의 release/acquire 쌍. <https://en.cppreference.com/w/c/atomic/memory_order>
+- Rust, "The Rust Programming Language, ch04-01 Ownership" — 소유권 규칙, 이동, double free. <https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html>
+- Rust Embedded, "Concurrency" — `static mut`, 임계 구역, 원자 연산, `Send`/`Sync`, 뮤텍스. <https://docs.rust-embedded.org/book/concurrency/>
+- Rust Embedded, "Panicking" — `#[panic_handler]`, panic-halt/abort/semihosting. <https://docs.rust-embedded.org/book/start/panicking.html>
+- embedded-hal, "embedded-hal 1.0.0" — HAL trait, `digital`/`i2c`/`spi`/`pwm`/`delay`, serial은 `embedded-io`. <https://docs.rs/embedded-hal/latest/embedded_hal/>
+- Embassy, "Embassy Book" — async/await, Future, executor, waker, no heap/static tasks. <https://embassy.dev/book/>
+- Embassy, "embassy-executor 0.10.0" — 정적 태스크, no alloc, CPU sleep, 공정 스케줄링. <https://docs.embassy.dev/embassy-executor/>
+- esp-rs, "esp-hal README" — 지원 칩·타깃, MSRV 1.95.0, 주변장치 성숙도, ESP32 rev 3.0 이상. <https://github.com/esp-rs/esp-hal>
+- esp-rs, "esp-hal 1.2.2 docs" — no_std HAL, embedded-hal/embedded-hal-async trait 구현. <https://docs.rs/esp-hal/latest/esp_hal/>
+- Espressif, "Rust on ESP Book: Toolchain Installation" — Xtensa는 espup, RISC-V는 rustup. <https://docs.espressif.com/projects/rust/book/getting-started/toolchain.html>
+- esp-rs, "espup" — Xtensa Rust 포크·LLVM·GCC 링커 설치. <https://github.com/esp-rs/espup>
+- esp-rs, "esp-idf-hal" — ESP-IDF 드라이버를 감싼 std HAL, embedded-hal 0.2/1.0 trait. <https://github.com/esp-rs/esp-idf-hal>
+- esp-rs, "esp-idf-svc" — Wi-Fi·HTTP·MQTT·NVS·OTA 서비스 래퍼. <https://docs.rs/esp-idf-svc/>

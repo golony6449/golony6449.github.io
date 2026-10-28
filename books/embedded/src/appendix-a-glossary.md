@@ -212,6 +212,57 @@ MCU 디버깅 인터페이스. 브레이크포인트, 변수 관찰, 레지스�
 **PIO (Programmable I/O)**
 RP2040이 제공하는 Programmable I/O.
 
+**스택(stack)**
+함수 호출 정보와 지역 변수가 놓이는 영역. MCU에서는 힙과 같은 SRAM을 반대 방향에서 밀어 쓰며, 넘치면 조용히 다른 데이터를 덮는다.
+
+**힙(heap)**
+`malloc`/`new`로 동적 할당하는 영역. 조각화·할당 실패·실행 시간 예측 불가 문제가 있다.
+
+**정적 메모리(static storage)**
+전역·정적 변수와 `static` 버퍼가 놓이는 영역(`.data`/`.bss`). 프로그램 수명 동안 자리를 차지한다.
+
+**단편화(fragmentation)**
+할당·해제가 반복되면서 총 여유 공간은 충분하지만 연속된 큰 블록이 없어지는 현상.
+
+**메모리 순서(memory ordering)**
+여러 문맥이 공유하는 메모리 접근의 가시성 순서. C11 `memory_order_acquire`/`release`로 데이터 발행과 소비를 동기화한다.
+
+**SPSC (Single Producer Single Consumer)**
+생산자 하나, 소비자 하나인 큐 구조. 인덱스 두 개와 release/acquire로 락 없이 구현할 수 있다.
+
+**태스크(task)**
+RTOS가 스케줄하는 독립 실행 흐름. 각자 스택과 우선순위를 가진다.
+
+**큐(queue)**
+태스크/ISR 사이에서 고정 크기 항목을 복사해 넘기는 FIFO. 블로킹 타임아웃과 가득 참 정책을 정한다.
+
+**우선순위(priority)**
+태스크의 긴급도. FreeRTOS는 준비된 태스크 중 우선순위가 가장 높은 것을 실행한다.
+
+**틱(tick)**
+RTOS 스케줄러의 시간 단위. `pdMS_TO_TICKS()`로 밀리초를 틱으로 바꾼다.
+
+**우선순위 역전(priority inversion)**
+낮은 우선순위 태스크가 뮤텍스를 잡고 있을 때 높은 우선순위 태스크가 그 뮤텍스를 기다리며 지연되는 현상.
+
+**우선순위 상속(priority inheritance)**
+높은 우선순위 태스크가 기다리는 동안 뮤텍스 소유자의 우선순위를 일시적으로 올리는 FreeRTOS 뮤텍스의 기능. 역전을 없애지 않고 시간을 한정한다.
+
+**경보(alert)**
+TWAI 드라이버가 Bus-Off·Error Passive·RX 큐 가득 참 같은 상태 변화를 알리는 플래그. `twai_read_alerts()`로 읽는다.
+
+**deep sleep / light sleep**
+ESP32의 저전력 모드. Deep sleep은 RTC 메모리·주변장치만 남기고(데이터시트 10µA), light sleep은 RAM 상태를 유지한 채 CPU를 멈춘다(0.8mA).
+
+**standby (CAN 트랜시버)**
+SN65HVD230의 저전력 listen-only 모드. `RS` 핀을 HIGH로 올리면 드라이버는 꺼지고 수신기는 동작한다(370µA 일반).
+
+**RTC GPIO / ext0 / ext1**
+Deep sleep에서 깨우기에 쓸 수 있는 RTC 영역 GPIO와 ESP-IDF의 깨우기 설정. `ext0`는 핀 하나, `ext1`은 여러 핀을 쓴다.
+
+**Task Watchdog (TWDT)**
+ESP-IDF가 태스크별로 리셋을 받아 정지·굶주림을 감시하는 워치독. `esp_task_wdt_add/reset`을 쓴다.
+
 ## A.4 IoT와 네트워크
 
 **MQTT**
@@ -408,3 +459,29 @@ SSE를 구독하는 브라우저 API. `retry:`로 재연결 간격을 정하고,
 
 **`node:sqlite`**
 Node.js에 내장된 SQLite 모듈. `DatabaseSync`로 동기 연결을 열고 `exec`, `prepare`, `run`, `all`을 쓴다. Node 24.15 기준 Stability 1.2(Release candidate)다.
+
+## A.8 Rust와 펌웨어 심화
+
+**`no_std`**
+표준 라이브러리(`std`) 없이 `core`만 쓰는 Rust 환경. OS·파일 시스템·힙 할당자를 전제하지 않는다.
+
+**소유권(ownership)**
+Rust에서 값마다 소유자가 하나이고, 소유자가 스코프를 벗어나면 값이 drop되는 규칙. 이동 후 원래 변수를 쓸 수 없다.
+
+**빌림(borrow)**
+소유권을 넘기지 않고 `&T`/`&mut T`로 값을 참조하는 것. 공유 참조 여러 개 또는 가변 참조 하나만 허용된다.
+
+**`embedded-hal`**
+MCU에 독립적인 HAL trait 모음. 1.0.0은 2024-01-09에 릴리스되었다. `SpiBus`, `OutputPin`, `I2c` 등이 있다.
+
+**Embassy**
+임베디드용 async 실행기. 힙 없이 정적 Future를 poll하고, 인터럽트/타이머 waker로 깨운다. 협조적 스케줄링이라 긴 블로킹은 다른 태스크를 막는다.
+
+**`esp-hal`**
+Espressif이 공식 지원하는 no_std HAL. 2026-10-29 기준 1.2.2(2026-09-18)이며, ESP32는 rev 3.0 이상만 지원한다. Xtensa 타깃은 `espup`이 필요하다.
+
+**`esp-idf-hal` / `esp-idf-svc`**
+ESP-IDF를 Rust로 감싼 std 계열 crate. Wi-Fi·HTTP·MQTT·NVS·OTA 같은 서비스를 제공하며, ESP-IDF 버전을 따라간다.
+
+**Future / waker**
+`async fn`이 만드는 미완료 작업과, 그 작업을 다시 poll하라고 executor에 알리는 핸들. JavaScript의 Promise/이벤트 루프에 대응한다.

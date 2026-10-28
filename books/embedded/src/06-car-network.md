@@ -413,7 +413,7 @@ DBC와 cantools는 "읽은 바이트를 이해하는" 도구이지, "차를 바�
 
 | 네트워크 | 주로 보는 도구 | 이 책에서의 다룸 |
 |---|---|---|
-| 클래식 CAN 500kbps | ELM327, SocketCAN, USB-CAN | 5~8장, 13~14장 |
+| 클래식 CAN 500kbps | ELM327, SocketCAN, USB-CAN | 5~8장, 13~17장 |
 | CAN FD | FD 지원 USB-CAN/인터페이스 | 개념과 주의점만 |
 | CAN XL | CAN XL 지원 인터페이스·계측기 | 개념만 |
 | 차량 이더넷/DoIP | 이더넷 인터페이스, DoIP 진단 도구 | 개념만 |

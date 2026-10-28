@@ -29,17 +29,19 @@
 |---|---|---|---|
 | 데이터베이스 | 플래시·EEPROM·NVS | 쓰기 횟수 제한, 쓰기 중 전원 차단 위험 | 11 |
 | 큐·메시지 브로커 | 링 버퍼, 인터럽트 | 생산자와 소비자가 ISR과 메인 루프로 나뉜다 | 11 |
-| 워커 스레드 | ISR, RTOS 태스크 | ISR은 짧게, RTOS API는 `FromISR` 변형 | 11 |
-| 뮤텍스/락 | 인터럽트 차단, 원자 연산, 큐 | `volatile`은 원자성을 보장하지 않는다 | 11 |
-| `setTimeout` | 타이머, 상태 기계 | 평균이 아니라 최악의 지연을 본다 | 1, 11 |
-| `setInterval` | 주기 상태 기계, 타이머 플래그 | `delay()`는 그동안 아무것도 못 한다 | 11 |
-| Promise | 상태 기계, 이벤트 플래그 | 콜백을 받아 줄 런타임이 없다 | 1, 11 |
+| 워커 스레드 | FreeRTOS 태스크, ISR | 태스크는 스택·우선순위, ISR은 `FromISR` API | 11, 15 |
+| 뮤텍스/락 | 뮤텍스, 원자 연산, 큐 | 우선순위 상속은 역전을 없애지 않는다 | 11, 14, 15 |
+| `setTimeout` | `vTaskDelay`, 타이머, 상태 기계 | 평균이 아니라 최악의 지연을 본다 | 11, 14, 15 |
+| `setInterval` | `xTaskDelayUntil`, 타이머 플래그 | `delay()`는 그동안 아무것도 못 한다 | 11, 14, 15 |
+| Promise | 상태 기계, Future, 이벤트 플래그 | 콜백을 받아 줄 런타임이 없다 | 1, 11, 14, 16 |
+| `async/await` | Embassy의 `.await`, RTOS 큐 대기 | 협조적 양보 vs 선점 스케줄 | 15, 16 |
+| 이벤트 루프 | 메인 루프, FreeRTOS 스케줄러, Embassy executor | 펌웨어는 우선순위·인터럽트·틱을 직접 설계 | 14, 15, 16 |
 | `try/catch` | 오류 코드, 재시도, 안전 상태 | 예외를 던져도 복구가 어렵다 | 1, 12 |
 | 재시도/백오프 | 재시도/백오프/멱등성 | 같은 명령이 두 번 실행될 수 있다 | 1, 3 |
 | 멱등성 키 | 시퀀스 번호, 트랜잭션 ID | 재전송과 늦은 응답을 매칭해야 한다 | 1, 3 |
 | 서킷 브레이커 | 연속 실패 시 링크 리셋/안전 상태 | 실패가 기계를 멈출 수 있다 | 1, 3 |
-| 가비지 컬렉션 | 정적 버퍼, 풀 | 조각화와 실패를 직접 관리한다 | 1, 11 |
-| 메모리 프로파일러 | `size`, 맵 파일, 스택 하이워터마크 | "컴파일된다"와 "들어간다"는 다르다 | 1, 11 |
+| 가비지 컬렉션 | 정적 버퍼, 풀, Rust 소유권 | 조각화와 해제 시점을 직접 관리한다 | 1, 11, 14, 16 |
+| 메모리 프로파일러 | `size`, 맵 파일, 스택 하이워터마크 | "컴파일된다"와 "들어간다"는 다르다 | 1, 11, 14, 15 |
 | CPU 프로파일러 | 오실로스코프, 로직 분석기, GPIO 토글 | 시간이 코드 밖에서 결정된다 | 11, 12 |
 | `console.log` | UART 로그, LED | 로그를 볼 수 없는 현장이 많다 | 12 |
 | DevTools Network | 로직 분석기, `candump` | 전기 신호까지 내려가 본다 | 12 |
@@ -56,6 +58,7 @@
 | 헬스 체크 | 하트비트, 마지막 오류 코드 | 주기적으로 올리거나 로컬에 남긴다 | 1, 10 |
 | APM | 카운터, 오류 코드, 리셋 원인 | 스택 트레이스가 거의 없다 | 1, 12 |
 | 서버 재시작 | 리셋, 전원 재인가 | 액추에이터 상태는 재시작해도 남는다 | 1, 11 |
+| 프로세스 감시(pm2/systemd) | 워치독 | 정상 완료 지점에서 리셋해야 의미가 있다 | 11, 14 |
 | 스테이징 | 벤치에서 두 노드로 시험 | 차량·현장에 바로 붙이지 않는다 | 9, 13 |
 | "내 PC에서는 된다" | 하드웨어 조건을 재현 조건에 기록 | 전원·케이블·보드·온도가 변수다 | 1, 12 |
 | 환경 변수/설정 | 프로비저닝, NVS | 하드코딩은 배포에서 문제가 된다 | 10, 11 |
@@ -122,31 +125,34 @@
 
 | 웹 개념 | 임베디드 대응 | 핵심 차이 | 관련 장 |
 |---|---|---|---|
-| 목 API 서버 | 가짜 ECU | CAN 프레임·ISO-TP까지 흉내 낸다 | 14, 16 |
-| 로컬 개발 서버 | vcan, python-can virtual | 실제 전기·타이밍이 없다 | 14 |
-| 녹화한 API 응답 픽스처 | candump 로그 재생 | 타임스탬프는 상대 시간으로 다룬다 | 14, 16 |
-| 브라우저의 `fetch` | Web Serial의 `reader.read()` | 청크·프롬프트·권한을 직접 다룬다 | 15 |
-| 웹소켓/SSE | BLE notify, MQTT | CCCD·연결 인터벌·MTU가 변수다 | 10, 15 |
-| E2E 테스트(Playwright) | 실차 읽기, HIL | 하드웨어·전원·안전이 끼어든다 | 16 |
-| 스테이징 환경 | HIL | plant·I/O를 실시간으로 시뮬레이션한다 | 16 |
-| 액세스 로그 | candump/ASC/BLF 원본 | 원시 바이트와 오류 상태를 남긴다 | 17 |
-| 구조화 로그(JSON) | DBC 디코딩 신호 | 스키마가 DBC 파일 밖에 있다 | 17 |
-| Kafka/수집 파이프라인 | 로거·링 버퍼·디코더 | 백프레셔·드롭을 직접 설계한다 | 17 |
-| Prometheus/Grafana | InfluxDB/Grafana | 카디널리티·보존 정책을 주의한다 | 17 |
-| 개인정보 마스킹 | VIN·GPS 제거/별칭 | 로그 원본에 섞여 있을 수 있다 | 9, 17 |
-| 브라우저 지원 매트릭스 | Web Serial/Bluetooth 지원 | Safari 미지원, HTTPS·사용자 제스처 | 15 |
+| 목 API 서버 | 가짜 ECU | CAN 프레임·ISO-TP까지 흉내 낸다 | 17, 19 |
+| 로컬 개발 서버 | vcan, python-can virtual | 실제 전기·타이밍이 없다 | 17 |
+| 녹화한 API 응답 픽스처 | candump 로그 재생 | 타임스탬프는 상대 시간으로 다룬다 | 17, 19 |
+| 브라우저의 `fetch` | Web Serial의 `reader.read()` | 청크·프롬프트·권한을 직접 다룬다 | 18 |
+| 웹소켓/SSE | BLE notify, MQTT | CCCD·연결 인터벌·MTU가 변수다 | 10, 18 |
+| E2E 테스트(Playwright) | 실차 읽기, HIL | 하드웨어·전원·안전이 끼어든다 | 19 |
+| 스테이징 환경 | HIL | plant·I/O를 실시간으로 시뮬레이션한다 | 19 |
+| 액세스 로그 | candump/ASC/BLF 원본 | 원시 바이트와 오류 상태를 남긴다 | 20 |
+| 구조화 로그(JSON) | DBC 디코딩 신호 | 스키마가 DBC 파일 밖에 있다 | 20 |
+| Kafka/수집 파이프라인 | 로거·링 버퍼·디코더 | 백프레셔·드롭을 직접 설계한다 | 20 |
+| Prometheus/Grafana | InfluxDB/Grafana | 카디널리티·보존 정책을 주의한다 | 20 |
+| 개인정보 마스킹 | VIN·GPS 제거/별칭 | 로그 원본에 섞여 있을 수 있다 | 9, 20 |
+| 브라우저 지원 매트릭스 | Web Serial/Bluetooth 지원 | Safari 미지원, HTTPS·사용자 제스처 | 18 |
 
 ## B.8 TypeScript/Node.js 프로젝트
 
 | 웹 개념 | 임베디드 대응 | 핵심 차이 | 관련 장 |
 |---|---|---|---|
-| `pyserial` | `serialport` | `data` 이벤트의 청크는 원하는 크기로 오지 않는다 | 7, 18 |
-| Python 타입 힌트·`Protocol` | TypeScript `interface`·판별 유니온 | 타입은 런타임에 지워진다. 경계에서 검증한다 | 18 |
-| `uv`/`pip` | `npm`/`package.json` | 잠금 파일·스크립트·Node 버전 조건이 다르다 | 18 |
-| Flask 라우트 | `node:http` 라우팅 | 프레임워크 없이 URL·메서드를 직접 분기한다 | 7, 19 |
-| WebSocket | SSE(`EventSource`) | SSE는 단방향, 재연결이 내장, HTTP/1.1 연결 수 제한 | 19 |
-| 응답 버퍼·큐 | `write()` 백프레셔 | `false`면 `drain`까지 기다리거나 드롭한다 | 19 |
-| SQLite ORM | `node:sqlite` `DatabaseSync` | 동기 API, WAL·배치·보존 정책을 직접 다룬다 | 17, 19 |
-| React/Vue 상태 | Canvas 게이지·차트 | DOM 대신 픽셀을 그린다. 접근성 대체 수단을 둔다 | 19 |
-| Jest/Vitest | `node:test` | 가짜 전송 계층·`:memory:` SQLite로 하드웨어 없이 시험 | 16, 19 |
-| TypeScript 빌드 | Node 타입 제거 | `tsc --noEmit`으로 타입 검사, `enum` 등은 실행 불가 | 18 |
+| `pyserial` | `serialport` | `data` 이벤트의 청크는 원하는 크기로 오지 않는다 | 7, 21 |
+| Python 타입 힌트·`Protocol` | TypeScript `interface`·판별 유니온 | 타입은 런타임에 지워진다. 경계에서 검증한다 | 21 |
+| `uv`/`pip` | `npm`/`package.json` | 잠금 파일·스크립트·Node 버전 조건이 다르다 | 21 |
+| Flask 라우트 | `node:http` 라우팅 | 프레임워크 없이 URL·메서드를 직접 분기한다 | 7, 22 |
+| WebSocket | SSE(`EventSource`) | SSE는 단방향, 재연결이 내장, HTTP/1.1 연결 수 제한 | 22 |
+| 응답 버퍼·큐 | `write()` 백프레셔 | `false`면 `drain`까지 기다리거나 드롭한다 | 22 |
+| SQLite ORM | `node:sqlite` `DatabaseSync` | 동기 API, WAL·배치·보존 정책을 직접 다룬다 | 20, 22 |
+| React/Vue 상태 | Canvas 게이지·차트 | DOM 대신 픽셀을 그린다. 접근성 대체 수단을 둔다 | 22 |
+| Jest/Vitest | `node:test` | 가짜 전송 계층·`:memory:` SQLite로 하드웨어 없이 시험 | 19, 22 |
+| TypeScript 빌드 | Node 타입 제거 | `tsc --noEmit`으로 타입 검사, `enum` 등은 실행 불가 | 21 |
+| `package.json`/`npm` | `Cargo.toml`/`cargo` | 의존성·빌드·테스트 명령이 다르다 | 16 |
+| 인터페이스/의존성 주입 | `embedded-hal` trait | 구체 HAL 없이 드라이버를 작성·mock 테스트 | 16 |
+| `async/await` | Embassy Future·`.await` | 힙 없이 정적 Future, 협조적 실행 | 16 |

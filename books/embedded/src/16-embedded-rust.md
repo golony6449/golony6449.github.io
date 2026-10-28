@@ -204,7 +204,7 @@ fn main() {
 }
 ```
 
-이 코드는 호스트에서 `embassy-executor` 0.10.0의 `platform-std` feature로 컴파일·실행해 확인했다. 출력은 `embassy-lab: task definition compiled`이었다. 실제 ESP32에서는 `pending()` 대신 HAL의 async 수신 Future를 기다린다.
+이 코드는 호스트에서 `embassy-executor` 0.10.0의 `platform-std` feature로 컴파일·실행해 확인했다. 출력은 `embassy task definition compiled`이었다. 실제 ESP32에서는 `pending()` 대신 HAL의 async 수신 Future를 기다린다.
 
 ### Future, waker, executor
 

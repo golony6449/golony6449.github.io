@@ -135,6 +135,20 @@ static void *pool_alloc(pool *p) {
     if (p->used > p->peak) p->peak = p->used;
     return b->bytes;
 }
+
+static int pool_free(pool *p, void *ptr) {
+    uintptr_t first = (uintptr_t)&p->blocks[0];
+    uintptr_t last = (uintptr_t)&p->blocks[BLOCK_COUNT - 1u];
+    uintptr_t at = (uintptr_t)ptr;
+    if (at < first || at > last || (at - first) % sizeof(block) != 0u) {
+        return -1; /* 이 풀의 블록이 아니다 */
+    }
+    block *blk = (block *)ptr;
+    blk->next = p->free_list;
+    p->free_list = blk;
+    p->used--;
+    return 0;
+}
 ```
 
 - `union`으로 free list 포인터와 데이터 공간을 겹쳐 쓴다. 사용 중일 때는 `bytes`가, 비어 있을 때는 `next`가 유효하다.

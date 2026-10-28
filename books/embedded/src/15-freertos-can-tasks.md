@@ -314,7 +314,7 @@ static bool parse_obd_frame(const can_frame_t *f, uint8_t *pid, float *value) {
     const uint8_t *d = f->data;
     if ((d[0] >> 4) != 0) return false;          /* Single Frame만 */
     uint8_t len = d[0] & 0x0F;
-    if (len < 3 || len > 7 || f->dlc < 3 + len) return false;
+    if (len < 3 || len > 7 || f->dlc < 1 + len) return false;
     if (d[1] != 0x41) return false;              /* Mode 01 긍정 응답 */
 
     *pid = d[2];
@@ -497,6 +497,8 @@ void app_main(void) {
 ```
 
 ### 코드에서 확인할 점
+
+- `len`은 PCI 뒤 페이로드의 길이다. 프레임에 필요한 총 바이트는 PCI 1바이트를 더한 `1 + len`이므로 `f->dlc < 1 + len`으로 검사한다. 패딩이 없는 5바이트 `04 41 0C 1A F8`도 받는다.
 
 - `g_state`의 값(rpm·speed·coolant·last_update·bus_ok)은 뮤텍스로 보호하고, 요청·응답·드롭 카운터는 `_Atomic`으로 둔다. `state_snapshot()`은 뮤텍스 안에서 값을 복사한 뒤 원자 카운터를 읽어 합친다. 두 종류의 공유 데이터를 한 가지 규칙으로 억지로 묶지 않는다.
 - `g_rx_queue_full`·`g_app_drops`·`g_driver_drops`는 여러 태스크/ISR 문맥에서 갱신될 수 있으므로 `_Atomic`을 쓴다. `volatile`은 원자성을 보장하지 않는다(14.3절).

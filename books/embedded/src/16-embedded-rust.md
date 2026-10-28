@@ -138,7 +138,7 @@ Rust의 `Result<T, E>`는 C의 오류 코드와 비슷하지만, `#[must_use]`�
 
 ## 16.3 `embedded-hal`: 하드웨어를 trait 뒤로
 
-`embedded-hal`은 MCU에 독립적인 HAL(Hardware Abstraction Layer) trait 모음이다. 1.0.0은 **2026-10-20에 릴리스**되었다. 주요 모듈은 `digital`, `i2c`, `spi`, `pwm`, `delay`다. 이 crate에는 serial trait이 없고, 시리얼은 `embedded-io`로 분리되어 있다.
+`embedded-hal`은 MCU에 독립적인 HAL(Hardware Abstraction Layer) trait 모음이다. 1.0.0은 **2024-01-09에 릴리스**되었다. 주요 모듈은 `digital`, `i2c`, `spi`, `pwm`, `delay`다. 이 crate에는 serial trait이 없고, 시리얼은 `embedded-io`로 분리되어 있다.
 
 드라이버를 `SpiBus`와 `OutputPin`에 제네릭으로 작성하면, STM32·ESP32·RP2040 어디서든 같은 코드를 쓸 수 있다. 테스트에서는 mock 구현을 넣어 하드웨어 없이 검증할 수 있다.
 
@@ -321,7 +321,7 @@ fn parse_rpm(frame: &[u8]) -> Result<u16, FrameError> {
     if !(4..=7).contains(&len) {
         return Err(FrameError::LengthMismatch);
     }
-    if frame.len() < 3 + len {
+    if frame.len() < 1 + len {
         return Err(FrameError::Truncated);
     }
     if frame[1] != 0x41 {
@@ -337,7 +337,8 @@ fn parse_rpm(frame: &[u8]) -> Result<u16, FrameError> {
 - `&[u8]`로 빌려 읽으므로 호출자가 프레임을 계속 쓸 수 있다.
 - `Result`는 "정상 값 또는 오류"를 타입으로 강제한다. 호출자는 `match`/`?`로 처리해야 하며, 오류를 무시하면 컴파일러가 경고한다.
 - `enum` 오류는 C의 정수 오류 코드보다 실수로 다른 오류를 비교할 가능성이 적다.
-- 이 코드는 `rustc --test`로 3개 테스트(짧은 프레임, 다중 프레임 PCI, 잘린 페이로드)를 통과했다.
+- `len`은 `41`·PID·데이터를 합친 페이로드 길이다. PCI 1바이트를 더한 `1 + len`이 필요한 총 바이트이므로, 패딩 없는 5바이트 정상 프레임도 받는다.
+- 이 코드는 `rustc --test`로 4개 테스트(짧은 프레임, 다중 프레임 PCI, 잘린 페이로드, 패딩 없는 5바이트 정상 프레임)를 통과했다.
 
 ### SPSC 링 버퍼
 

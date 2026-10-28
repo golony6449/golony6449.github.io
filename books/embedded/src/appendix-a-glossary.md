@@ -323,3 +323,59 @@ DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 자연(p
 
 **MCP2515**
 SPI로 MCU에 붙는 CAN 컨트롤러. Raspberry Pi 같은 SBC에 CAN을 추가할 때 쓴다.
+
+## A.6 가상 실습·테스트·데이터
+
+**SocketCAN**
+Linux 커널의 CAN 소켓 인터페이스. `can0`, `vcan0` 같은 네트워크 인터페이스로 CAN 프레임을 주고받는다.
+
+**vcan (Virtual CAN)**
+실제 CAN 컨트롤러 없이 프레임을 주고받는 Linux 가상 인터페이스. ACK·중재·오류 카운터·비트 타이밍은 재현하지 않는다.
+
+**can-utils**
+SocketCAN용 사용자 도구 모음. `candump`, `cansend`, `cangen`, `cansniffer`, `canplayer`, `canbusload`, `can-calc-bit-timing` 등이 있다.
+
+**candump 로그**
+`(타임스탬프) 인터페이스 ID#데이터` 형식의 텍스트 CAN 로그. `canplayer`와 python-can `CanutilsLogReader`가 읽는다.
+
+**python-can virtual**
+같은 파이썬 프로세스 안에서 여러 `Bus` 객체를 가상 채널로 묶는 인터페이스. 프로세스 밖으로 나가지 않는다.
+
+**udp_multicast**
+python-can의 UDP 멀티캐스트 기반 가상 버스. 여러 프로세스가 같은 그룹에 붙을 수 있지만 전달 보장은 없다.
+
+**ELM327-emulator**
+ELM327 어댑터와 ECU 응답을 흉내 내는 파이썬 패키지. TCP·시리얼·SLCAN 모드를 지원한다.
+
+**Web Serial**
+브라우저에서 사용자가 고른 직렬 포트를 여는 API. HTTPS/localhost, 사용자 제스처, 브라우저 권한이 필요하다.
+
+**Web Bluetooth / BLE GATT**
+브라우저에서 BLE 기기의 GATT 서비스·특성에 접근하는 API. 블루투스 클래식 SPP는 직접 다루지 못한다.
+
+**HIL (Hardware-in-the-Loop)**
+실제 ECU를 실시간 시뮬레이션된 plant·I/O에 연결해 시험하는 방식. 재현성은 높지만 실제 도로·EMC를 대신하지 못한다.
+
+**ASC / BLF / MF4**
+CAN·측정 로그 형식. ASC는 Vector ASCII, BLF는 Vector 바이너리, MF4는 ASAM MDF 측정 데이터 컨테이너(확장자 `.mf4`)다.
+
+**SQLite / InfluxDB / TSDB**
+SQLite는 파일 기반 SQL DB, InfluxDB는 시계열 DB(TSDB)다. CAN 로그 저장·질의에 쓴다.
+
+**SOME/IP**
+AUTOSAR의 서비스 지향 미들웨어. RPC·이벤트·직렬화를 제공하고 UDP/TCP 위에서 동작한다.
+
+**DoIP (Diagnostics over IP)**
+ISO 13400-2의 IP 기반 진단. 차량 이더넷에서 TCP/UDP 13400 포트를 쓴다.
+
+**CAN XL**
+ISO 11898-1:2024의 CAN 세대. 1~2048바이트 데이터, 11비트 우선순위 ID + 32비트 수용 필드, 두 개의 CRC를 갖는다.
+
+**SIC (Signal Improvement Capability)**
+CAN FD/XL의 고속 데이터 구간에서 신호 품질을 개선하는 트랜시버 기능. CAN XL은 SIC XL 트랜시버로 20Mbps 이상을 겨냥한다.
+
+**샘플 포인트(sample point)**
+CAN 비트 시간에서 수신기가 레벨을 읽는 지점. 보통 PS1이 끝나는 지점이며, 버스 길이·지연·클록 오차로 계산한다.
+
+**Error Active / Error Passive**
+CAN 노드의 오류 상태. TEC/REC ≤127이면 Active(6 dominant 오류 플래그), 127 초과면 Passive(6 recessive)다.

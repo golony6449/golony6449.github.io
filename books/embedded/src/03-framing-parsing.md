@@ -395,6 +395,214 @@ bus.send(can.Message(
 ))
 ```
 
+### 흐름 제어를 직접 다루기
+
+지금까지는 ELM327이 FC를 자동으로 보내 주는 경우를 다뤘다. 원시 CAN으로 ECU 응답을 받을 때는 **받는 쪽이 FC를 보내고, 보내는 쪽이 그 FC를 지켜야** 한다. 두 역할을 구분하자.
+
+```text
+ECU(7E8) ── FF ──────────────▶ 테스터
+ECU(7E8) ◀────────── FC ───── 테스터(7E0)   ← "계속 보내라, BS/STmin은 이렇게"
+ECU(7E8) ── CF1 ────────────▶ 테스터
+ECU(7E8) ── CF2 ────────────▶ 테스터
+```
+
+- FC는 **데이터 방향이 반대**다. ECU가 7E8로 응답하면 테스터는 7E0으로 FC를 보낸다. 요청/응답 주소 쌍을 바꿔 끼우면 안 된다.
+- FC의 첫 바이트는 `0x30 | FS`다. FS는 0(CTS, 계속 보내라), 1(WAIT, 잠시 기다려라), 2(OVERFLOW, 그만 보내라)다.
+- 두 번째 바이트는 **block size(BS)**다. CF를 몇 개 받은 뒤 다시 FC를 보낼지 정한다. `0`이면 나머지를 FC 없이 끝까지 받는다.
+- 세 번째 바이트는 **STmin**이다. CF 사이의 최소 간격이다. `0x00`~`0x7F`는 밀리초, `0xF1`~`0xF9`는 100~900마이크로초를 뜻한다.
+- 나머지 바이트는 패딩이다. OBD-II에서는 `0xCC`를 권장한다.
+
+```python
+def fc_frame(fs: int = 0, block_size: int = 0, stmin: int = 0) -> bytes:
+    """수신 측이 보내는 흐름 제어 프레임 8바이트."""
+    if fs not in (0, 1, 2):
+        raise ValueError("FS는 0(CTS), 1(WAIT), 2(OVERFLOW)다")
+    if not 0 <= block_size <= 0xFF:
+        raise ValueError("block size는 1바이트다")
+    return bytes([0x30 | fs, block_size, stmin, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC])
+
+
+def stmin_seconds(stmin: int) -> float:
+    """STmin 바이트를 초로 바꾼다."""
+    if 0x00 <= stmin <= 0x7F:
+        return stmin / 1000.0
+    if 0xF1 <= stmin <= 0xF9:
+        return (stmin - 0xF0) / 10000.0
+    raise ValueError(f"예약된 STmin 값이다: 0x{stmin:02X}")
+```
+
+### FC를 보내며 조립하는 수신기
+
+아래 클래스는 FF를 받으면 CTS FC를 보내고, BS만큼 CF를 받을 때마다 다시 FC를 보낸다. CF 사이의 간격이 타임아웃을 넘으면 조립을 포기한다.
+
+```python
+import time
+import can
+
+
+class IsoTpReceiver:
+    """ECU 응답(예: 7E8)을 받아 FC를 보내고 메시지를 조립한다."""
+
+    def __init__(
+        self,
+        bus: can.BusABC,
+        tx_id: int,
+        rx_id: int,
+        block_size: int = 0,
+        stmin: int = 0,
+        timeout: float = 1.0,
+    ) -> None:
+        self.bus = bus
+        self.tx_id = tx_id          # 테스터 → ECU (예: 0x7E0)
+        self.rx_id = rx_id          # ECU → 테스터 (예: 0x7E8)
+        self.block_size = block_size
+        self.stmin = stmin
+        self.timeout = timeout
+        self._buf: bytearray | None = None
+        self._need = 0
+        self._next_seq = 1
+        self._since_fc = 0
+        self._deadline = 0.0
+
+    def reset(self) -> None:
+        self._buf = None
+        self._need = 0
+        self._next_seq = 1
+        self._since_fc = 0
+        self._deadline = 0.0
+
+    def _send_fc(self, fs: int = 0) -> None:
+        self.bus.send(can.Message(
+            arbitration_id=self.tx_id,
+            is_extended_id=False,
+            data=fc_frame(fs, self.block_size, self.stmin),
+        ))
+
+    def _finish(self) -> bytes | None:
+        if self._buf is None or len(self._buf) < self._need:
+            return None
+        payload = bytes(self._buf[:self._need])
+        self.reset()
+        return payload
+
+    def feed(self, msg: can.Message, now: float | None = None) -> bytes | None:
+        now = time.monotonic() if now is None else now
+        if msg.arbitration_id != self.rx_id:
+            return None
+        data = bytes(msg.data)
+        if not data:
+            return None
+        pci = data[0] >> 4
+
+        if pci == 0:  # Single Frame
+            length = data[0] & 0x0F
+            if length == 0 or length > len(data) - 1:
+                return None
+            return bytes(data[1:1 + length])
+
+        if pci == 1:  # First Frame
+            if len(data) < 2:
+                return None
+            total = ((data[0] & 0x0F) << 8) | data[1]
+            if total < 8:
+                return None
+            self._buf = bytearray(data[2:])
+            self._need = total
+            self._next_seq = 1
+            self._since_fc = 0
+            self._deadline = now + self.timeout
+            self._send_fc(0)        # CTS: 계속 보내라
+            return self._finish()
+
+        if pci == 2:  # Consecutive Frame
+            if self._buf is None or self._need == 0:
+                return None
+            if now > self._deadline:
+                self.reset()        # N_Cr 타임아웃: 부분 데이터를 버린다
+                return None
+            seq = data[0] & 0x0F
+            if seq != self._next_seq:
+                self.reset()        # 순서가 어긋나면 조립을 포기한다
+                return None
+            self._buf.extend(data[1:])
+            self._next_seq = (self._next_seq + 1) & 0x0F
+            self._since_fc += 1
+            self._deadline = now + self.timeout
+            if self.block_size and self._since_fc >= self.block_size:
+                self._since_fc = 0
+                self._send_fc(0)    # BS만큼 받았으니 다음 블록을 허가한다
+            return self._finish()
+
+        return None                 # FC 등은 수신기가 처리할 대상이 아니다
+```
+
+사용 예:
+
+```python
+bus = can.Bus(interface="socketcan", channel="can0")
+rx = IsoTpReceiver(bus, tx_id=0x7E0, rx_id=0x7E8, block_size=8, stmin=0)
+
+bus.send(can.Message(
+    arbitration_id=0x7DF,
+    is_extended_id=False,
+    data=bytes([0x02, 0x09, 0x02, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC]),
+))
+
+deadline = time.monotonic() + 2.0
+while time.monotonic() < deadline:
+    msg = bus.recv(timeout=0.1)
+    if msg is None:
+        continue
+    payload = rx.feed(msg)
+    if payload is not None:
+        print(payload.hex(" "))
+        break
+```
+
+- 위 요청은 `09 02`(VIN)다. 응답은 FF/CF로 오고, `rx.feed()`가 완성된 `49 02 01 ...`을 돌려준다.
+- 실제 VIN은 출력·저장하지 않는다. 테스트에는 가짜 VIN을 쓴다.
+- `block_size=8`은 예시다. ECU가 받아들일 수 있는 값과 애플리케이션 버퍼 크기를 보고 정한다. 확신이 없으면 `0`(끝까지)으로 시작하고, 버퍼가 작으면 블록을 나눈다.
+- `stmin=0`은 지연 없음이다. 수신 측이 CF를 따라가지 못하면 `0x0A`(10ms)처럼 올린다.
+- `feed()`는 FF마다 새 조립을 시작한다. 같은 버스에 여러 ECU가 있으면 `rx_id`별로 수신기를 따로 만든다.
+
+### 보내는 쪽: FC를 기다리고 BS·STmin을 지킨다
+
+테스터가 긴 요청(예: 여러 DID를 한 번에 쓰는 요청)을 보낼 때는 반대 역할이 된다. FF를 보낸 뒤 ECU가 보내는 FC를 기다리고, FS가 CTS면 CF를 보낸다.
+
+```python
+def wait_for_fc(bus: can.BusABC, fc_id: int, timeout: float = 1.0) -> tuple[int, int, int]:
+    """ECU가 보내는 FC를 기다려 (FS, block_size, STmin)을 돌려준다."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        msg = bus.recv(timeout=max(0.0, deadline - time.monotonic()))
+        if msg is None or msg.arbitration_id != fc_id:
+            continue
+        data = bytes(msg.data)
+        if len(data) < 3 or (data[0] >> 4) != 3:
+            continue
+        return data[0] & 0x0F, data[1], data[2]
+    raise TimeoutError("FC를 받지 못했다")
+```
+
+- `FS=0(CTS)`이면 `block_size`만큼 CF를 보내고, 다시 FC를 기다린다.
+- `FS=1(WAIT)`이면 보내지 말고 다시 FC를 기다린다. WAIT가 무한히 반복되지 않도록 애플리케이션에서 상한을 정한다.
+- `FS=2(OVERFLOW)`이면 전송을 중단하고 부분 데이터를 버린다.
+- CF 사이에는 `stmin_seconds(stmin)`만큼 기다린다. `time.sleep()`은 짧은 지연에 부정확할 수 있으므로, 정밀한 타이밍이 필요하면 `time.monotonic()`으로 목표 시각을 계산한다.
+- BS/STmin을 무시하면 ECU가 CF를 버리거나 `BUFFER FULL`·타임아웃이 난다. **FC를 보냈다고 전송이 끝난 것이 아니라, FC의 값이 다음 전송의 규칙이다.**
+
+### 타임아웃은 어느 쪽이 기다리는가
+
+ISO-TP에는 역할별 타이머가 있다. 이름만 알아도 로그를 읽을 때 도움이 된다.
+
+| 타이머 | 기다리는 쪽 | 기다리는 대상 | 만료 시 |
+|---|---|---|---|
+| N_Bs | 보내는 쪽 | FF/블록 뒤의 FC | 전송 중단, 재시도 여부는 구현이 결정 |
+| N_Cr | 받는 쪽 | 다음 CF | 조립 포기, 다음 FF를 기다림 |
+| N_As | 보내는 쪽 | CAN 프레임 전송 확인 | 드라이버·하드웨어 오류로 처리 |
+| N_Ar | 받는 쪽 | CAN 프레임 전송 확인 | 드라이버·하드웨어 오류로 처리 |
+
+구체적인 값은 ISO 15765-2와 차량·도구 구현에 따라 다르다. 이 책에서는 값을 단정하지 않고, **설정값을 코드에 상수로 숨기지 말고 로그에 남긴다**는 원칙만 가져간다. 타임아웃이 나면 "응답이 없다"가 아니라 "어느 타이머가, 얼마를 기다리다, 어떤 프레임을 못 받았는가"를 기록한다.
+
 ## 3.7 상태 기계 파서
 
 프레임을 한 번에 받는다고 가정하지 말고, **바이트 하나를 넣을 때마다 상태가 진행되는 파서**를 만든다. 그래야 부분 수신·노이즈·재동기화를 모두 같은 코드로 처리할 수 있다.
@@ -659,5 +867,70 @@ ISO-TP에서 추가로 시험할 것:
 - ELM327은 `\r`과 프롬프트 `>`로 응답을 구분한다. `readline()` 대신 프롬프트까지 읽는 프레이머를 쓴다.
 - ELM327이 조립해 준 `0:`/`1:` 줄과 원시 CAN의 ISO-TP PCI는 다른 계층이다. 둘을 섞지 않는다.
 - 8바이트를 넘는 OBD 응답은 ISO-TP의 SF/FF/CF/FC로 오간다. CAN ID와 시퀀스를 검사하며 조립한다.
+- FC는 데이터 방향이 반대다. ECU가 7E8로 응답하면 테스터는 7E0으로 FC를 보낸다.
+- FC의 FS(CTS/WAIT/OVERFLOW), block size, STmin이 다음 전송의 규칙이다. BS=0은 끝까지, STmin은 CF 사이의 최소 간격이다.
+- N_Bs(FC 대기)와 N_Cr(CF 대기) 타임아웃을 구분해 로그에 남긴다. 타임아웃은 "응답 없음"이 아니라 "어느 프레임을 기다리다 만료됐는가"다.
 
 다음 장에서는 보드 안에서 센서·메모리·디스플레이와 대화하는 I2C와 SPI를 다룬다. UART와 달리 클록 선이 있고, 주소나 CS로 여러 장치를 구분한다.
+
+## 연습 문제
+
+### 1. 길이 접두 프레임
+
+다음 바이트 스트림이 길이 접두 방식으로 왔다. 프레임 하나를 잘라 payload를 쓰라.
+
+```text
+04 41 0C 1A F8  03 41 0D 50
+```
+
+### 2. ISO-TP 조립
+
+다음 프레임을 조립해 전체 payload와 그 의미를 쓰라.
+
+```text
+7E8  10 14 49 02 01 54 45 53
+7E8  21 54 56 49 4E 30 30 30
+7E8  22 30 30 30 30 30 30 30
+```
+
+### 3. 시퀀스가 어긋나면
+
+FF를 받은 뒤 CF의 시퀀스가 `21`이어야 하는데 `23`이 왔다. 파서는 어떻게 해야 하는가? 부분 데이터를 이어 붙이면 안 되는 이유도 쓰라.
+
+### 4. FC 바이트 해석
+
+다음 FC 프레임의 FS, block size, STmin을 해석하라.
+
+```text
+30 08 0A CC CC CC CC CC
+31 00 00 CC CC CC CC CC
+32 00 00 CC CC CC CC CC
+```
+
+### 5. 파서 불변식
+
+`parse(full) == parse(byte_by_byte)`를 자동 테스트로 만들려 한다. 어떤 입력으로 시험해야 하는가? 세 가지를 쓰라.
+
+## 정답과 해설
+
+### 1.
+
+첫 바이트 `04`는 길이 4, payload는 `41 0C 1A F8`이다. 다음 `03`은 길이 3, payload는 `41 0D 50`이다. 길이를 읽고 그만큼 자른 뒤 다음 길이로 넘어간다.
+
+### 2.
+
+전체 길이는 `0x014 = 20`바이트다. payload는 `49 02 01` + 17바이트 VIN ASCII다. 위 바이트를 이어 붙이면 `49 02 01 54 45 53 54 56 49 4E 30 30 30 30 30 30 30 30 30 30`이고, ASCII 부분은 `TESTVIN0000000000`(테스트용 가짜 VIN)이다. 실제 VIN은 저장·공개하지 않는다.
+
+### 3.
+
+시퀀스가 어긋나면 **현재 조립을 버리고** 다음 FF를 기다린다. 부분 데이터를 이어 붙이면 프레임 하나가 빠진 채로 그럴듯한 잘못된 메시지가 만들어지고, 그 오류는 나중에 발견하기 어렵다. CAN ID가 다른 프레임도 같은 이유로 버린다.
+
+### 4.
+
+- `30 08 0A`: FS=0(CTS, 계속 보내라), BS=8(CF 8개마다 다시 FC), STmin=0x0A(10ms)
+- `31 00 00`: FS=1(WAIT, 잠시 기다려라). 보내는 쪽은 다시 FC를 기다린다.
+- `32 00 00`: FS=2(OVERFLOW, 그만 보내라). 받는 쪽은 전송을 중단하고 부분 데이터를 버린다.
+
+### 5.
+
+예: ① 정상 프레임을 한 번에 넣은 경우와 1바이트씩 넣은 경우 ② 경계에서 여러 조각으로 나눠 넣은 경우(1+2+3바이트 등) ③ 가비지 바이트·CRC 오류·잘린 프레임 뒤에 정상 프레임이 오는 경우. 가능하면 무작위 길이로 자르는 속성 테스트를 함께 돌린다.

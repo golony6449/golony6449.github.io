@@ -132,3 +132,20 @@ DTC 삭제와 쓰기 서비스의 위험은 9장에서 자세히 다룬다. 이 
 | 로그에 구멍 | 백프레셔·드롭, 회전 중 유실 | 드롭 카운터, 파일 크기·시각 | 링 버퍼, 원자적 회전, 드롭 메트릭 |
 | DB 질의가 느림 | 인덱스 없음, 행 수 많음 | `EXPLAIN QUERY PLAN` | `(can_id, ts)` 인덱스, 버킷·보존 정책 |
 | InfluxDB 시리즈 폭증 | VIN·세션 ID를 태그로 사용 | 시리즈 카디널리티 | 낮은 카디널리티 태그, 별칭/해시 |
+
+## D.9 TypeScript·Node.js 대시보드
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| `ERR_MODULE_NOT_FOUND` | 패키지 미설치, 다른 디렉터리에서 실행 | `package.json`, `node_modules`, 현재 디렉터리 | `npm install`, 프로젝트 루트에서 실행 |
+| `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` | `enum`, 생성자 매개변수 프로퍼티 등 | 오류가 난 줄, `tsconfig.json` | `erasableSyntaxOnly`에 맞게 코드 변경, 또는 `tsx` 사용 |
+| `Cannot find module './transport'` | Node 타입 제거 모드에서 확장자 누락 | import 경로 | `./transport.ts`처럼 확장자 포함 |
+| `node:sqlite`를 찾을 수 없음 | Node 22.5 미만, `--experimental-sqlite` 필요 버전 | `node --version` | Node 24로 업그레이드, 또는 `better-sqlite3` |
+| `EADDRINUSE` | 8787 포트를 다른 프로세스가 점유 | `netstat -ano`로 PID 확인 | 포트 변경, 이전 프로세스 종료 |
+| 화면이 갱신되지 않음 | SSE 프록시 버퍼링, CSP, EventSource 오류 | 브라우저 Network의 `/events`, 서버 로그 | `no-transform`, `X-Accel-Buffering: no`, CSP 확인 |
+| 서버 메모리가 는다 | 느린 SSE 클라이언트에 모두 전송 | `write()` 반환값, 클라이언트 수 | `slow` 플래그·드롭, `drain` 대기 |
+| `SQLITE_BUSY` | 다른 프로세스가 쓰기 잠금, WAL 미설정 | 잠금 프로세스, `journal_mode` | 단일 writer, WAL, `busy_timeout` |
+| `serialport` 바인딩 오류 | Node 버전과 네이티브 모듈 불일치 | `npm rebuild`, Node 버전 | `npm rebuild serialport`, Node 재설치 |
+| 값이 `--`로만 보임 | `NO DATA`, 파싱 실패, 수집기 미시작 | `/api/snapshot`, 서버 로그, `010C` 단독 | PID 지원·시동 상태·파서 확인 |
+| 단위가 이상함 | 저장 단위와 표시 단위 혼용 | DB 값, 화면 값, 토글 상태 | 저장은 km/h·°C, 표시에서만 변환 |
+| 재연결이 반복됨 | USB 전원·COM 번호 변경·`UNABLE TO CONNECT` | 재연결 로그, `ATDPN`, 장치 관리자 | 백오프, 포트 탐색, 전원·케이블 점검 |

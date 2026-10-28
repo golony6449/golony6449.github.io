@@ -1,6 +1,6 @@
 # 부록 C. 참고 자료
 
-이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-28이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
+이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-28~29이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
 
 ## C.1 OBD-II와 차량 진단
 
@@ -106,3 +106,18 @@
 - SQLite, "SQLite Documentation" — 파일 DB, WAL, SQL. <https://www.sqlite.org/docs.html>
 - pytest, "pytest documentation" — fixture, parametrize, approx. <https://docs.pytest.org/en/stable/>
 - Wikipedia, "Hardware-in-the-loop simulation" — plant simulation, 실시간성, ECU·I/O. <https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation>
+
+## C.9 TypeScript·Node.js
+
+- Node.js, "Modules: TypeScript" — Node 24.12부터 타입 제거 안정, `tsconfig.json` 무시, `enum`·매개변수 프로퍼티 제한. <https://nodejs.org/docs/latest-v24.x/api/typescript.html>
+- TypeScript, "TSConfig Reference: erasableSyntaxOnly" — 런타임 의미가 있는 TypeScript 문법을 오류로 처리. <https://www.typescriptlang.org/tsconfig/#erasableSyntaxOnly>
+- Node.js, "SQLite" — `DatabaseSync`, `exec`/`prepare`/`run`/`all`, Node 24.15 기준 Stability 1.2(Release candidate). <https://nodejs.org/docs/latest-v24.x/api/sqlite.html>
+- Node.js, "HTTP" — `response.write()`의 반환값과 `'drain'` 이벤트(백프레셔). <https://nodejs.org/docs/latest-v24.x/api/http.html>
+- SerialPort, "Node SerialPort" — `SerialPort`, `data` 이벤트, `SerialPortMock`, 패키지 저장소. <https://github.com/serialport/node-serialport>
+- SerialPort, "serialport 13.0.0 release" — Node 16/18 지원 중단, Node 20 이상 요구. <https://github.com/serialport/node-serialport/releases/tag/v13.0.0>
+- SerialPort, "serialport API docs" — `SerialPort`, `SerialPort.list()`, 파서. <https://serialport.io/docs/api-serialport/>
+- sebi2k1, "node-can (socketcan)" — Linux SocketCAN, `createRawChannel`, `onMessage`, `send`, `start/stop`. <https://github.com/sebi2k1/node-can>
+- node-can, "CHANGELOG" — 4.3.2(2026-10-03), 4.1.0의 N-API 전환, 4.3.1의 `ENETDOWN`/`ENOBUFS` 복구. <https://github.com/sebi2k1/node-can/blob/master/CHANGELOG.md>
+- MDN, "EventSource" — `text/event-stream`, 단방향 스트림, HTTP/1.1 연결 수 제한. <https://developer.mozilla.org/en-US/docs/Web/API/EventSource>
+- MDN, "Using server-sent events" — `data`/`id`/`retry` 필드, 주석(`:`) keep-alive. <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>
+- Ircama, "ELM327-emulator" — TCP `-n 35000`, `scenario car`, 다중 PID, Windows에서 com0com 없이 TCP 사용. <https://github.com/Ircama/ELM327-emulator> (C.8에 같은 출처)

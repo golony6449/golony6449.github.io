@@ -376,7 +376,8 @@ def main() -> None:
                 print(f"01 {pid:02X} -> 응답 없음")
                 continue
             value = parse_pid(pid, data[2:])
-            print(f"01 {pid:02X} -> {data.hex(' ').upper()}  ({value})")
+            suffix = f"  ({value})" if value is not None else ""
+            print(f"01 {pid:02X} -> {data.hex(' ').upper()}{suffix}")
         vin = request(bus, 0x09, 0x02)
         if vin is not None:
             print("VIN ->", vin[3:].decode("ascii", errors="replace"))
@@ -394,7 +395,7 @@ if __name__ == "__main__":
 실행 결과는 다음과 같다.
 
 ```text
-01 00 -> 41 00 40 01 18 11  (None)
+01 00 -> 41 00 40 01 18 11
 01 0C -> 41 0C 1A F8  (1726.0)
 01 0D -> 41 0D 32  (50)
 01 05 -> 41 05 82  (90)

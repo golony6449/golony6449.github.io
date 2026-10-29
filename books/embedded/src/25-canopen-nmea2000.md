@@ -79,7 +79,7 @@ CANopen 노드는 아무 때나 PDO를 보내지 않는다. **NMT(Network Manage
 | Operational | 5 | SDO, PDO, NMT, EMCY, 하트비트 |
 | Stopped | 4 | NMT, 하트비트만. SDO·PDO는 안 된다 |
 
-NMT 명령은 CAN ID `0x000`에 노드 ID를 더한 프레임으로 보낸다. 데이터는 2바이트다.
+NMT 명령은 CAN ID `0x000` 고정으로 보낸다. 데이터는 2바이트이고, 첫 바이트가 명령, 두 번째 바이트가 대상 노드 ID다.
 
 | 명령 | 값 | 뜻 |
 |---|---:|---|
@@ -254,7 +254,7 @@ NMEA 2000은 선박 전자장비의 CAN 기반 네트워크다. 국제 표준은
 | 129025 | Position, Rapid Update | 8 | 위도·경도. 1e-7도/bit, 32비트 signed |
 | 129029 | GNSS Position Data | fast packet | 날짜·시각·위도·경도·고도·위성 수 |
 | 127488 | Engine Parameters, Rapid Update | 8 | 엔진 회전수·부스트 |
-| 127489 | Engine Parameters, Dynamic | 8 | 오일·냉각수·연료 압력 등 |
+| 127489 | Engine Parameters, Dynamic | 26 (fast packet) | 오일·냉각수·연료 압력 등 |
 
 예를 들어 PGN 127250의 8바이트는 다음과 같다.
 
@@ -268,7 +268,7 @@ NMEA 2000은 선박 전자장비의 CAN 기반 네트워크다. 국제 표준은
 
 ### Fast packet
 
-NMEA 2000은 J1939 TP 대신 **fast packet**을 쓴다.
+NMEA 2000은 일반 응용 메시지에 J1939 TP 대신 **fast packet**을 쓴다. 일부 ISO 계열 PGN은 ISO 11783-3 TP를 쓰므로, 장비 문서에서 해당 PGN의 전송 형식을 확인한다.
 
 - 첫 프레임: 1바이트 제어 + 1바이트 총 길이 + 최대 6바이트 데이터
 - 연속 프레임: 1바이트 제어 + 최대 7바이트 데이터
@@ -419,7 +419,7 @@ bus.shutdown()
 - PDO는 `0x180+ID` 등으로 보내는 이벤트 스트림이다. 매핑·전송 형식·NMT 상태가 모두 맞아야 한다.
 - 하트비트는 `0x700+ID`, EMCY는 `0x080+ID`다. 하트비트는 생존, EMCY는 오류를 알린다.
 - NMEA 2000은 IEC 61162-3이며 J1939/ISO 11783 데이터링크를 쓴다. 250kbps, 50노드, 120Ω 종단, 29비트 PGN/SA다.
-- NMEA 2000은 J1939 TP 대신 fast packet을 쓴다. 최대 223바이트다.
+- NMEA 2000은 일반 응용 메시지에 fast packet을 쓴다. 최대 223바이트이고, 일부 ISO 계열 PGN은 ISO TP를 쓴다.
 - 같은 "PGN"이라도 J1939와 NMEA 2000의 사전은 다르다. DBC를 그대로 재사용하지 않는다.
 
 ## 연습 문제
@@ -458,7 +458,7 @@ NMEA 2000 fast packet으로 43바이트를 보낸다. 총 프레임 수와 첫 �
 - b) `0x02` Stop Remote Node → Stopped
 - c) `0x80` Enter Pre-operational → Pre-operational
 
-NMT 명령은 `0x000 + NodeID`로 보낸다. 노드 7이면 `0x007`이다. 데이터 두 번째 바이트가 노드 ID다. Stopped에서는 SDO·PDO가 동작하지 않으므로, 설정을 바꾸려면 Pre-operational로 돌아와야 한다.
+NMT 명령은 CAN ID `0x000` **고정**으로 보내고, 데이터 두 번째 바이트가 노드 ID다. 노드 7이면 `01 07`, `02 07`, `80 07`처럼 보낸다. Stopped에서는 SDO·PDO가 동작하지 않으므로, 설정을 바꾸려면 Pre-operational로 돌아와야 한다.
 
 ### 2.
 

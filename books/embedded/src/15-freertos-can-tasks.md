@@ -79,6 +79,29 @@ void check_stack(void) {
 | `logger`(선택) | 4 | 4096 B | 0 | SD/UART 로그 배치 쓰기 |
 | HTTP 서버 | ESP-IDF `httpd`가 생성 | 설정 | 0 | 최신 상태 JSON 제공 |
 
+태스크와 큐의 데이터 흐름은 다음과 같다.
+
+```text
+TWAI 수신 인터럽트/드라이버 RX 큐
+        │ twai_receive(100ms)
+        ▼
+   can_rx (prio 12) ── xQueueSend(g_frame_q, 0) ──▶ [g_frame_q, 32개]
+                                                        │ xQueueReceive(20ms)
+                                                        ▼
+                                                     obd (prio 9)
+                                                        │
+                     twai_transmit(7DF 요청) ◀──────────┤
+                                                        │ state_update()
+                                                        ▼
+                                              [g_state + mutex]
+                                                        │
+                                                        ▼
+                                              HTTP 핸들러 state_snapshot()
+
+   TWAI 경보 ──▶ alert (prio 10) ── Bus-Off 복구
+                                  (twai_initiate_recovery → twai_start)
+```
+
 - `can_rx`가 가장 높은 이유는 드라이버 RX 큐가 넘치기 전에 빨리 꺼내야 하기 때문이다. 파싱·로그는 낮은 태스크로 미룬다.
 - `alert`는 `can_rx`보다 낮지만 `obd`보다 높다. Bus-Off 복구는 통신 지속성에 직결된다.
 - `obd`는 200ms 주기로 요청하고, 큐에서 프레임을 꺼내 파싱한다. 파싱이 오래 걸리면 `can_rx`가 큐에 쌓기만 하므로 수신은 계속된다.

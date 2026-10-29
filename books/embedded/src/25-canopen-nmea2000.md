@@ -91,6 +91,28 @@ NMT 명령은 CAN ID `0x000` 고정으로 보낸다. 데이터는 2바이트이�
 
 예를 들어 노드 5를 시작하려면 `0x000`에 `01 05`를 보낸다. 모든 노드를 대상으로 하려면 노드 ID를 0으로 둔다.
 
+상태 전환을 그림으로 정리하면 다음과 같다. NMT 명령은 CAN ID `0x000`으로 보내고, 대상 노드 ID를 데이터 두 번째 바이트에 넣는다.
+
+```text
+전원 인가
+   │
+   ▼
+Initialisation ──(자동)──▶ Pre-operational
+                              │  0x01 Start Remote Node
+                              ▼
+                         Operational
+                              │  0x02 Stop Remote Node
+                              ▼
+                           Stopped
+                              │  0x01 Start Remote Node
+                              ▼
+                         Operational
+
+Operational/Stopped ──0x80 Enter Pre-operational──▶ Pre-operational
+0x81 Reset Node ──▶ Initialisation ──(자동)──▶ Pre-operational
+0x82 Reset Communication ──▶ 통신 파라미터 초기화 ──(자동)──▶ Pre-operational
+```
+
 ### 왜 상태가 필요한가
 
 - **Pre-operational**은 "설정 모드"다. SDO로 객체 사전을 읽고 쓰며 PDO 매핑을 설정할 수 있지만, PDO 트래픽은 나가지 않는다.

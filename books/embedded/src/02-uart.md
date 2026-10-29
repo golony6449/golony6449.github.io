@@ -467,7 +467,7 @@ with serial.Serial(PORT, 115200, timeout=1) as ser:
 
 ## 연습 문제
 
-### 1. 8N1의 처리량
+### 1. (기초) 8N1의 처리량
 
 8N1(데이터 8비트, 패리티 없음, stop 1비트)에서 한 바이트는 start 1비트를 포함해 10비트다.
 
@@ -475,7 +475,7 @@ with serial.Serial(PORT, 115200, timeout=1) as ser:
 2. 100바이트를 보내는 데 몇 ms가 걸리는가?
 3. 9600bps라면 같은 100바이트에 몇 ms가 걸리는가?
 
-### 2. TX/RX와 전압
+### 2. (기초) TX/RX와 전압
 
 3.3V MCU와 5V USB-UART 어댑터를 연결하려 한다.
 
@@ -483,7 +483,7 @@ with serial.Serial(PORT, 115200, timeout=1) as ser:
 2. 공통 접지는 왜 필요한가?
 3. RS-232 수준의 신호를 MCU UART에 직접 연결하면 어떻게 되는가?
 
-### 3. ELM327 응답 구분
+### 3. (기초) ELM327 응답 구분
 
 다음 응답의 뜻과 다음 조치를 쓰라.
 
@@ -492,7 +492,7 @@ with serial.Serial(PORT, 115200, timeout=1) as ser:
 3. `STOPPED`
 4. `BUFFER FULL`
 
-### 4. `read(10)`의 함정
+### 4. (중급) `read(10)`의 함정
 
 `ser.read(10)`을 한 번 호출해 10바이트를 받으려 했다. 6바이트만 돌아왔다.
 
@@ -500,7 +500,7 @@ with serial.Serial(PORT, 115200, timeout=1) as ser:
 2. 10바이트를 끝까지 받으려면 어떻게 코드를 써야 하는가?
 3. `readline()`을 쓸 때의 전제 조건은 무엇인가?
 
-### 5. 패리티가 있을 때
+### 5. (중급) 패리티가 있을 때
 
 8E1(데이터 8비트, 짝수 패리티, stop 1비트)에서 한 바이트의 총 비트 수와 38400bps에서의 초당 바이트 수를 구하라.
 

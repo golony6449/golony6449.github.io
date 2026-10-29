@@ -79,6 +79,29 @@ void check_stack(void) {
 | `logger`(선택) | 4 | 4096 B | 0 | SD/UART 로그 배치 쓰기 |
 | HTTP 서버 | ESP-IDF `httpd`가 생성 | 설정 | 0 | 최신 상태 JSON 제공 |
 
+태스크와 큐의 데이터 흐름은 다음과 같다.
+
+```text
+TWAI 수신 인터럽트/드라이버 RX 큐
+        │ twai_receive(100ms)
+        ▼
+   can_rx (prio 12) ── xQueueSend(g_frame_q, 0) ──▶ [g_frame_q, 32개]
+                                                        │ xQueueReceive(20ms)
+                                                        ▼
+                                                     obd (prio 9)
+                                                        │
+                     twai_transmit(7DF 요청) ◀──────────┤
+                                                        │ state_update()
+                                                        ▼
+                                              [g_state + mutex]
+                                                        │
+                                                        ▼
+                                              HTTP 핸들러 state_snapshot()
+
+   TWAI 경보 ──▶ alert (prio 10) ── Bus-Off 복구
+                                  (twai_initiate_recovery → twai_start)
+```
+
 - `can_rx`가 가장 높은 이유는 드라이버 RX 큐가 넘치기 전에 빨리 꺼내야 하기 때문이다. 파싱·로그는 낮은 태스크로 미룬다.
 - `alert`는 `can_rx`보다 낮지만 `obd`보다 높다. Bus-Off 복구는 통신 지속성에 직결된다.
 - `obd`는 200ms 주기로 요청하고, 큐에서 프레임을 꺼내 파싱한다. 파싱이 오래 걸리면 `can_rx`가 큐에 쌓기만 하므로 수신은 계속된다.
@@ -606,7 +629,7 @@ FreeRTOS 뮤텍스에는 **우선순위 상속(priority inheritance)**이 있다
 
 ## 연습 문제
 
-### 1. 태스크와 스택
+### 1. (중급) 태스크와 스택
 
 ESP-IDF에서 스택 4096바이트인 태스크를 4개 만들려 한다.
 
@@ -614,7 +637,7 @@ ESP-IDF에서 스택 4096바이트인 태스크를 4개 만들려 한다.
 2. `uxTaskGetStackHighWaterMark(NULL)`이 120을 돌려주면 무엇을 뜻하는가?
 3. 스택을 2048로 줄여도 되는지 판단하는 절차를 쓰라.
 
-### 2. 큐 길이
+### 2. (중급) 큐 길이
 
 CAN 버스에서 초당 최대 1,500프레임이 들어오고, `obd_task`가 최악 300ms 동안 큐를 비우지 못한다.
 
@@ -622,13 +645,13 @@ CAN 버스에서 초당 최대 1,500프레임이 들어오고, `obd_task`가 최
 2. 큐가 32개면 어떤 일이 생기는가?
 3. 드라이버 RX 큐와 응용 큐 중 어느 쪽이 먼저 넘칠지 어떻게 알 수 있는가?
 
-### 3. ISR과 큐
+### 3. (기초) ISR과 큐
 
 1. ISR에서 `xQueueSendFromISR()`의 세 번째 인자는 무엇인가?
 2. 그 값이 `pdTRUE`일 때 ISR 끝에서 무엇을 해야 하는가?
 3. ISR에서 `xQueueSend()`를 쓰면 왜 안 되는가?
 
-### 4. Bus-Off 복구
+### 4. (중급) Bus-Off 복구
 
 다음 동작을 올바른 순서로 나열하라.
 
@@ -640,7 +663,7 @@ D. twai_initiate_recovery()
 E. RECOVERING → STOPPED
 ```
 
-### 5. 우선순위 역전
+### 5. (심화) 우선순위 역전
 
 낮은 우선순위 태스크 L이 뮤텍스를 잡고, 높은 우선순위 H가 그 뮤텍스를 기다린다. 중간 우선순위 M이 계속 준비 상태다.
 

@@ -213,3 +213,34 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 | 충전 중에만 리셋 | 14.4V에서 입력 여유 없음 | 전압 로그 | 9~16V 이상 입력 강압, TVS |
 | 점프스타트 후 장치 사망 | 24V·load dump 과도 | 입력 보호 회로 | TVS·넓은 입력·퓨즈 |
 | 대기 전류가 큼 | LDO·USB-UART·LED, 슬립 미설정 | 전류계로 분리 측정 | 불필요 부품 제거, 슬립, 분리 |
+
+## D.13 부트로더·OTA
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| OTA 후 예전 버전이 부팅된다 | `esp_ota_set_boot_partition()` 누락, `otadata` 미갱신, 롤백 발생 | 부팅 로그의 파티션·버전, `esp_ota_get_boot_partition()` | set_boot 호출, 롤백 원인 확인 |
+| OTA가 성공했는데 다음 리셋에서 되돌아간다 | `esp_ota_mark_app_valid_cancel_rollback()` 미호출, 자체 시험 실패 | `esp_ota_get_state_partition()`, 자체 시험 로그 | 통과 후 mark valid, 시험 범위 조정 |
+| OTA가 시작하자마자 실패한다 | 이미지가 슬롯보다 큼, 파티션 타입 오류 | 이미지 크기, 파티션 CSV, `esp_ota_begin()` 오류 | 슬롯 크기 확대 또는 이미지 축소 |
+| HTTPS OTA가 인증서 오류로 실패한다 | 장치 시각 오류, 루트 인증서·번들 누락, 리다이렉트 대상 인증서 누락 | 로그의 TLS 오류, `date`, 서버 인증서 | SNTP, cert bundle, 대상 인증서 추가 |
+| OTA 도중 전원이 꺼졌다 | 배터리·USB·리셋 | 전원 로그, OTA 재시도 | 현재 앱은 유지된다. 재시도·저전압 차단 |
+| OTA 중 워치독 리셋 | 플래시 쓰기·다운로드가 타임아웃 초과 | TWDT 로그, OTA 청크 크기 | 청크 단위 리셋, 전용 태스크·타임아웃 |
+| Secure Boot를 켠 뒤 부팅하지 않는다 | 서명되지 않은 이미지, 키 불일치, eFuse 읽기 보호 | 부트로더 로그, 서명 설정 | 서명된 이미지, 공식 eFuse 표 확인(복구 불가 주의) |
+| Flash 암호화 후 부팅 루프 | 평문 재플래시, 키 불일치, 첫 암호화 중 전원 차단 | 부트 로그, 플래시 설정 | 릴리스 모드 절차, 전원 안정화, 전용 보드 |
+| 파티션을 바꾼 뒤 앱이 안 뜬다 | 앱 오프셋·크기 불일치, 테이블 오프셋 변경 | `idf.py partition-table`, 부팅 로그 | 파티션 재생성, 시리얼 플래싱 |
+| OTA 후 설정이 초기화됐다 | NVS 스키마 변경, 네임스페이스 변경 | NVS 키·버전 로그 | 마이그레이션, 기본값, 버전 필드 |
+
+## D.14 전력·sleep
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| deep sleep 전류가 데이터시트보다 크다 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 | 불필요 부품 제거, standby, wake source 최소화 |
+| 잠들지 않는다 | Wi-Fi/BT 미종료, 열린 소켓, 태스크 블로킹 | `esp_sleep_start()` 전 로그, 전류 | 무선 종료, 태스크 정리, sleep API 확인 |
+| 타이머 wake가 안 된다 | 단위(µs) 오류, 0 설정, sleep 모드 불일치 | 설정값, wake cause | `esp_sleep_enable_timer_wakeup(us)` 확인 |
+| ext0/ext1 wake가 안 된다 | RTC GPIO 아님(GPIO21 등), 레벨 오류, ext1 모드 | 핀 목록, `esp_sleep_get_wakeup_cause()` | RTC GPIO로 변경, 레벨·모드 확인 |
+| 깨어나자마자 다시 잔다 | wake 핀이 계속 활성, wake source 미해제 | 핀 전압, wake 설정 | `rtc_gpio_deinit()`, wake source 해제, 디바운스 |
+| CAN 프레임으로 못 깨운다 | TWAI는 wake 원천 아님, 펄스 폭 부족, GPIO21 | 벤치 파형, wake cause | 타이머 wake, 래치·펄스 확장, wake 트랜시버 |
+| 배터리가 빨리 준다 | 평균 전류 과다, Wi-Fi 재연결 반복, 저전압 차단 없음 | 전류 로그, 하트비트, 전압 | 활성 시간·주기·송신 전력 축소, 차단 |
+| 브라운아웃 리셋이 반복된다 | 3.3V 레일 강하, 부하·배선·커넥터 | 리셋 원인, 전압 파형 | 전원 설계, 디커플링, 부하 분리 |
+| 깨어난 뒤 CAN이 안 된다 | TWAI 재초기화 누락, 트랜시버 standby | 부팅 로그, `RS` 핀 | sleep 시퀀스 역순으로 재초기화 |
+| deep sleep 뒤 시각이 틀린다 | RTC 시각 미유지, SNTP 미실행 | 로그 시각, SNTP 결과 | wake 후 SNTP, TLS 전 시각 확인 |
+| OTA 중 sleep에 들어간다 | 절전 태스크가 OTA를 모름 | OTA·sleep 로그 | OTA 중 sleep 금지 플래그 |

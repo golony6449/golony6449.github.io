@@ -166,7 +166,7 @@ ESP32는 `esp_reset_reason()`으로 마지막 리셋의 원인을 알려 준다.
 | `ESP_RST_PWR_GLITCH` | 전원 글리치 |
 | `ESP_RST_UNKNOWN` | 판별 불가 |
 
-`ESP_RST_EXT`(외부 핀 리셋)는 ESP32에서는 해당하지 않는다. `ESP_RST_JTAG`, `ESP_RST_USB`, `ESP_RST_SDIO`, `ESP_RST_EFUSE` 같은 값도 칩·상황에 따라 나온다.
+`ESP_RST_EXT`(외부 핀 리셋)는 ESP32에서는 해당하지 않는다. `ESP_RST_JTAG`, `ESP_RST_USB`, `ESP_RST_SDIO`, `ESP_RST_EFUSE` 같은 값도 칩·상황에 따라 나온다. 아래 코드도 문서 대조만 했으며 **실물 확인 필요**다.
 
 ```c
 #include "esp_system.h"
@@ -304,7 +304,7 @@ for line in simulate(["crash", "crash", "crash", "ok", "crash"]):
 5: safe mode, skip normal boot
 ```
 
-- 세 번 연속 실패하면 네 번째 부팅에서 안전 모드로 들어간다.
+위 출력은 이 코드를 실제로 실행한 결과다. 세 번 연속 실패하면 네 번째 부팅에서 안전 모드로 들어간다.
 - 안전 모드에서는 정상 부팅을 건너뛰고 복구 경로만 남긴다.
 - "ok"가 나와도 카운터가 임계값을 넘은 뒤에는 안전 모드가 우선한다. 안전 모드 해제는 사용자의 명시적 조작(버튼·OTA 성공·진단 명령)으로 한다.
 

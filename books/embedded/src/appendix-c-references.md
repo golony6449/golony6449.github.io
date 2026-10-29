@@ -271,3 +271,22 @@
 - ISO/IEC, "TR 11801-9906:2025" — 100BASE-T1/1000BASE-T1/10BASE-T1S 채널·거리 규격. <https://www.iso.org/standard/91327.html>
 - NXP, "Networking the FlexRay Way" — 10Mbps, 2 channel, TDMA 정적/동적 구간, star/bus. <https://www.nxp.com/docs/en/supporting-information/NETWRKFRWAY.pdf>
 - ISO, "ISO 17458 FlexRay communications system" — FlexRay 데이터링크·물리 계층 표준(유료). <https://www.iso.org/standard/59804.html>
+
+## C.15 부트로더·OTA·현장 운영
+
+접속일은 2026-10-30이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)을 기준으로 했다. 20~22장의 ESP32 코드는 이 문서들의 API와 대조했지만 실물에서 확인하지 않았으므로, 실제 적용 전에 사용하는 ESP-IDF 버전의 문서를 다시 확인한다. 워치독·sleep 모드·ESP32 데이터시트·TWAI는 C.10에 정리되어 있으며, 21·22장은 그 출처를 다시 사용했다.
+
+- Espressif, "Bootloader" — ROM 부트로더, 2단계 부트로더(`0x1000`), 파티션 테이블(`0x8000`), 앱 선택, 부트로더 크기 제한. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/bootloader.html>
+- Espressif, "Partition Tables" — `factory`/`ota_0`~`ota_15`, `otadata`, `nvs`, `coredump`, CSV 형식, 오프셋 정렬, two-OTA 레이아웃. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/partition-tables.html>
+- Espressif, "OTA" — `esp_ota_begin/write/end/set_boot_partition`, `esp_ota_get_next_update_partition`, 이미지 상태 `NEW`/`PENDING_VERIFY`/`VALID`/`INVALID`/`ABORTED`, `esp_ota_mark_app_valid_cancel_rollback()`, `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/ota.html>
+- Espressif, "ESP HTTPS OTA" — `esp_https_ota`, `esp_https_ota_begin/perform/finish/abort`, 인증서 번들, 리다이렉트, 부분 다운로드·이어받기. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/esp_https_ota.html>
+- Espressif, "Secure Boot v2" — RSA-PSS 3072, SHA-256, eFuse 공개키 다이제스트, 키 하나, JTAG 비활성화, Flash 암호화와의 결합. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/security/secure-boot-v2.html>
+- Espressif, "Flash Encryption" — AES-256, 32바이트 단위·오프셋 기반 키 tweak, eFuse 키, 개발/릴리스 모드, 첫 부팅 암호화, 되돌릴 수 없는 위험. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/security/flash-encryption.html>
+- Espressif, "Core Dump" — Flash `data/coredump` 파티션, UART Base64, ELF·SHA-256, `idf.py coredump-info`/`coredump-debug`, 암호화 파티션 플래그. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/core_dump.html>
+- Espressif, "Misc System API" — `esp_reset_reason()`과 `esp_reset_reason_t` 값(POWERON, SW, PANIC, INT_WDT, TASK_WDT, BROWNOUT, DEEPSLEEP, CPU_LOCKUP 등). <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/misc_system_api.html>
+- Espressif, "ESP-IDF ESP32 Kconfig.system (v5.2)" — 브라운아웃 검출기 `CONFIG_ESP_BROWNOUT_DET`, `CONFIG_ESP_BROWNOUT_DET_LVL_SEL_*`, ESP32 클래식 임계값 2.43~2.80V(추정, ±0.05V), 기본 레벨 0. <https://github.com/espressif/esp-idf/blob/v5.2/components/esp_system/port/soc/esp32/Kconfig.system>
+- Espressif, "NVS" — 키-값 저장소, 네임스페이스, `nvs_open/get/set/commit`, 플래시 수명·전원 차단. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/nvs_flash.html>
+- Kubernetes, "Liveness, Readiness, and Startup Probes" — liveness는 재시작, readiness는 트래픽 제외, startup은 초기화 유예. <https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/>
+- Kubernetes, "Deployment" — 롤링 업데이트, `kubectl rollout undo`(롤백), 배포 상태 확인. <https://kubernetes.io/docs/concepts/workloads/controllers/deployment/>
+- Kubernetes, "Pod Lifecycle" — `CrashLoopBackOff`, 컨테이너 재시작 백오프. <https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/>
+- Martin Fowler, "BlueGreenDeployment" — 블루·그린 배포의 전환·롤백 개념. <https://martinfowler.com/bliki/BlueGreenDeployment.html>

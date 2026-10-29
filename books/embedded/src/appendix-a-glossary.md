@@ -228,10 +228,13 @@ OS 없이 `main()`과 인터럽트로 동작하는 환경. 프로세스·가상 
 고정 크기 버퍼를 원형으로 사용하는 큐. 생산자와 소비자가 head/tail을 움직이며, SPSC면 락 없이 동작한다.
 
 **워치독(watchdog)**
-일정 시간 안에 리셋되지 않으면 MCU를 재시작하는 장치. 메인 루프에서만 리셋해야 의미가 있다.
+일정 시간 안에 리셋되지 않으면 MCU를 재시작하는 장치. ESP-IDF에는 태스크를 감시하는 TWDT(Task Watchdog Timer)와 인터럽트 지연을 감시하는 IWDT(Interrupt Watchdog Timer)가 있다. ISR·타이머가 아니라 일이 끝난 태스크 문맥에서 리셋해야 의미가 있다.
 
 **브라운아웃(brownout)**
-전압이 순간적으로 떨어져 리셋이나 오동작이 나는 현상. 검출기와 디커플링으로 보호한다.
+전압이 순간적으로 떨어져 리셋이나 오동작이 나는 현상. ESP32의 브라운아웃 검출기는 칩의 3.3V 공급을 감시하며, 12V 배터리 전압을 직접 재는 회로가 아니다. 검출기와 디커플링으로 보호하고, 배터리 보호는 별도의 저전압 차단으로 설계한다.
+
+**리셋 루프(reset loop)**
+같은 원인으로 리셋이 반복되는 상태. 부팅 카운터·시간 창·안전 모드로 빠져나온다.
 
 **플래시 / SRAM / EEPROM / NVS**
 플래시는 프로그램과 상수, SRAM은 실행 중 변수, EEPROM/NVS는 전원이 꺼져도 남는 설정, 외부 플래시/SD는 로그와 펌웨어에 쓴다.
@@ -265,6 +268,57 @@ MCU 디버깅 인터페이스. 브레이크포인트, 변수 관찰, 레지스�
 
 **OTA(Over-The-Air)**
 네트워크로 펌웨어를 업데이트하는 것. A/B 파티션, 서명 검증, 롤백을 전제로 설계한다.
+
+**2단계 부트로더(second-stage bootloader)**
+ESP32 플래시 `0x1000`에 있는 ESP-IDF 부트로더. 파티션 테이블을 읽고, `otadata`를 보고 앱 파티션을 고르며, Secure Boot·Flash 암호화 설정을 확인한 뒤 앱으로 넘어간다. ROM 부트로더는 이 2단계 부트로더를 읽어 실행한다.
+
+**파티션 테이블(partition table)**
+플래시를 `app`·`data` 파티션으로 나눈 표. ESP-IDF 기본 오프셋은 `0x8000`이고, 앱 파티션 오프셋은 `0x10000` 경계에 맞춘다.
+
+**otadata**
+다음 부팅에 선택할 OTA 슬롯을 기록하는 `data/ota` 파티션. 보통 `0x2000`바이트(두 섹터)다.
+
+**A/B 업데이트**
+실행 중이 아닌 슬롯에 새 이미지를 쓰고, 검증이 끝난 뒤 부팅 파티션을 전환하는 방식. 쓰기 도중 전원이 끊겨도 현재 앱은 유지된다.
+
+**앱 롤백(app rollback)**
+새 앱이 자체 시험을 통과하지 못하거나 확인 전에 리셋되면 이전 앱으로 돌아가는 기능. `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`과 `esp_ota_mark_app_valid_cancel_rollback()`을 쓴다.
+
+**안티 롤백(anti-rollback)**
+보안 버전이 낮은 예전 앱으로의 다운그레이드를 막는 기능. 앱 롤백과 반대 방향이며, eFuse의 보안 버전을 쓴다.
+
+**Secure Boot**
+부팅할 때 이미지 서명을 검증하는 기능. ESP32 Secure Boot V2는 RSA-PSS 3072·SHA-256을 쓰고, 공개키 다이제스트를 eFuse에 둔다. 키를 잃으면 복구가 어렵다.
+
+**Flash 암호화(flash encryption)**
+플래시 내용을 AES-256으로 암호화하는 기능. 키는 eFuse에 있고, 첫 부팅 때 평문을 그 자리에서 암호화한다. 펌웨어 변조를 막지는 않으므로 Secure Boot와 함께 쓴다.
+
+**eFuse**
+칩 내부의 일회성 설정 비트. Secure Boot·Flash 암호화·칩 설정에 쓰이며, 한 번 구우면 되돌릴 수 없다.
+
+**core dump**
+패닉 시 태스크 스택·레지스터·일부 메모리를 저장한 덤프. Flash의 `data/coredump` 파티션이나 UART로 받고, 같은 빌드의 ELF로 분석한다.
+
+**안전 모드(safe mode)**
+리셋 루프나 고장이 반복될 때 CAN 송신·액추에이터를 멈추고 OTA·진단 같은 복구 경로만 남기는 상태.
+
+**light sleep / deep sleep / hibernation**
+ESP32의 절전 모드. light sleep은 RAM·주변장치 상태를 유지하고 CPU만 멈춘다. deep sleep은 RTC 메모리·RTC 주변장치만 남기고 앱을 리셋처럼 다시 시작한다. hibernation은 RTC 타이머·일부 RTC GPIO만 남긴다.
+
+**RTC GPIO**
+deep sleep의 ext0/ext1 깨우기에 쓸 수 있는 GPIO. ESP32는 GPIO0, 2, 4, 12~15, 25~27, 32~39가 해당하며, GPIO21은 아니다.
+
+**ULP(Ultra-Low-Power coprocessor)**
+deep sleep 중에도 동작하는 보조 프로세서. 센서·ADC를 주기적으로 확인하고 MCU를 깨울 수 있다. 전체 CAN/Wi-Fi 스택을 돌리지는 못한다.
+
+**저전압 차단(low-voltage cutoff)**
+배터리 전압이 일정 값 아래로 내려가면 부하를 끄거나 sleep에 들어가는 보호 기능. 브라운아웃 검출기와 달리 12V 배터리 전압을 직접 감시한다.
+
+**liveness / readiness / startup**
+Kubernetes의 헬스 체크 개념. 펌웨어에서는 각각 워치독·하트비트, 자체 시험·서비스 가능 상태, 부팅 유예 시간에 대응한다.
+
+**블루·그린 / 카나리**
+웹 배포 전략. 임베디드에서는 A/B 파티션 전환과 장치 그룹별 단계적 OTA에 대응한다.
 
 **프로비저닝(provisioning)**
 장치에 Wi-Fi 자격 증명, 키, 초기 설정을 넣는 과정. 하드코딩은 배포에서 문제가 된다.

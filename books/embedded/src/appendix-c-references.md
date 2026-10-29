@@ -295,7 +295,7 @@
 
 접속일은 2026-10-30이다. 29~31장의 수식·수치는 교재·표준 요약·공식 문서를 근거로 했고, 예제 출력은 필자가 실행한 결과다. OBD PID 공식·범위와 ELM327 타이밍은 C.1의 OBD-II PIDs·ELM327 데이터시트, C.7의 SAE J1979를 재사용했다.
 
-- Steven W. Smith, *The Scientist and Engineer's Guide to Digital Signal Processing*, California Technical Publishing, 1997 — 3장 "ADC and DAC"의 표본화 정리·에일리어싱, 15장 "Moving Average Filters"의 `√N` 잡음 감소, 19장 "Recursive Filters"의 단일 극 필터 계수·시상수. <https://www.dspguide.com/ch3/2.htm>, <https://www.dspguide.com/ch15/2.htm>, <https://www.dspguide.com/ch19/2.htm>
+- Steven W. Smith, *The Scientist and Engineer's Guide to Digital Signal Processing*, California Technical Publishing, 1997 — 원서 3장 "ADC and DAC"의 표본화 정리·에일리어싱, 원서 15장 "Moving Average Filters"의 `√N` 잡음 감소, 원서 19장 "Recursive Filters"의 단일 극 필터 계수·시상수. <https://www.dspguide.com/ch3/2.htm>, <https://www.dspguide.com/ch15/2.htm>, <https://www.dspguide.com/ch19/2.htm>
 - John W. Tukey, *Exploratory Data Analysis*, Addison-Wesley, 1977 — 중앙값 필터의 기원으로 인용되는 책.
 - Greg Welch·Gary Bishop, "An Introduction to the Kalman Filter", UNC-Chapel Hill TR 95-041(2006 개정) — 칼만 필터의 예측·갱신, 칼만 이득. <https://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf>
 - NIST/SEMATECH, "e-Handbook of Statistical Methods, 1.3.5.6 Detection of Outliers" — 수정 z-점수 `0.6745(x-median)/MAD`, 임계값 3.5, 정규성 가정의 한계. <https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm>

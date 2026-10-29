@@ -161,8 +161,8 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 | 특정 태스크가 안 돎 | 우선순위 starvation, 뮤텍스 대기, 무한 루프 | `vTaskGetRunTimeStats`, 스택, 뮤텍스 보유 시간 | 우선순위·주기 조정, 임계 구역 축소 |
 | Bus-Off가 반복됨 | 배선·종단·비트레이트·전원 | TEC/REC, `bus_error_count`, 파형 | 배선·종단·속도 확인, 복구는 증상 완화일 뿐 |
 | 복구 후 통신이 안 됨 | `BUS_RECOVERED` 전 `twai_start()`, TX 큐 유실 | 경보 순서, 상태 로그 | 복구 완료 후 start, 요청 재큐 |
-| Deep sleep 전류가 큼 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 전압 | 불필요 부품 제거, `RS` HIGH, wake source 최소화 |
-| CAN 활동으로 안 깨움 | 프레임이 짧아 RTC GPIO가 놓침, ext0 레벨 설정 오류 | 벤치에서 프레임 폭·핀 파형, `ext0` 설정 | 타이머 wake, 래치/펄스 확장, wake 지원 트랜시버 검토 |
+| Deep sleep 전류가 큼 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 전압 | 불필요 부품 제거, `RS` HIGH, 깨우기 원천 최소화 |
+| CAN 활동으로 안 깨움 | 프레임이 짧아 RTC GPIO가 놓침, ext0 레벨 설정 오류 | 벤치에서 프레임 폭·핀 파형, `ext0` 설정 | 타이머 깨우기, 래치/펄스 확장, wake 지원 트랜시버 검토 |
 | 깨어난 뒤 CAN 응답 없음 | TWAI 재초기화 누락, 트랜시버가 standby | 부팅 로그, `RS` 핀, `twai_start()` | sleep 시퀀스 역순으로 재초기화 |
 | `volatile` 공유 변수 값이 반쪽 | 원자성 없음, 다중 변수 스냅샷 | 32비트 값의 상·하위 바이트, 로그 | `_Atomic`, 인터럽트 차단, 큐 |
 | `xQueueSendFromISR` 후 반응 지연 | `portYIELD_FROM_ISR` 누락 | ISR 코드, `pxHigherPriorityTaskWoken` | ISR 끝에서 yield 호출 |
@@ -233,16 +233,16 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 
 | 증상 | 원인 후보 | 확인 방법 | 조치 |
 |---|---|---|---|
-| deep sleep 전류가 데이터시트보다 크다 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 | 불필요 부품 제거, standby, wake source 최소화 |
+| deep sleep 전류가 데이터시트보다 크다 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 | 불필요 부품 제거, standby, 깨우기 원천 최소화 |
 | 잠들지 않는다 | Wi-Fi/BT 미종료, 열린 소켓, 태스크 블로킹 | `esp_sleep_start()` 전 로그, 전류 | 무선 종료, 태스크 정리, sleep API 확인 |
-| 타이머 wake가 안 된다 | 단위(µs) 오류, 0 설정, sleep 모드 불일치 | 설정값, wake cause | `esp_sleep_enable_timer_wakeup(us)` 확인 |
-| ext0/ext1 wake가 안 된다 | RTC GPIO 아님(GPIO21 등), 레벨 오류, ext1 모드 | 핀 목록, `esp_sleep_get_wakeup_cause()` | RTC GPIO로 변경, 레벨·모드 확인 |
-| 깨어나자마자 다시 잔다 | wake 핀이 계속 활성, wake source 미해제 | 핀 전압, wake 설정 | `rtc_gpio_deinit()`, wake source 해제, 디바운스 |
-| CAN 프레임으로 못 깨운다 | TWAI는 wake 원천 아님, 펄스 폭 부족, GPIO21 | 벤치 파형, wake cause | 타이머 wake, 래치·펄스 확장, wake 트랜시버 |
+| 타이머 깨우기가 안 된다 | 단위(µs) 오류, 0 설정, sleep 모드 불일치 | 설정값, wake cause | `esp_sleep_enable_timer_wakeup(us)` 확인 |
+| ext0/ext1 깨우기가 안 된다 | RTC GPIO 아님(GPIO21 등), 레벨 오류, ext1 모드 | 핀 목록, `esp_sleep_get_wakeup_cause()` | RTC GPIO로 변경, 레벨·모드 확인 |
+| 깨어나자마자 다시 잔다 | wake 핀이 계속 활성, 깨우기 원천 미해제 | 핀 전압, 깨우기 설정 | `rtc_gpio_deinit()`, 깨우기 원천 해제, 디바운스 |
+| CAN 프레임으로 못 깨운다 | TWAI는 깨우기 원천 아님, 펄스 폭 부족, GPIO21 | 벤치 파형, wake cause | 타이머 깨우기, 래치·펄스 확장, wake 트랜시버 |
 | 배터리가 빨리 준다 | 평균 전류 과다, Wi-Fi 재연결 반복, 저전압 차단 없음 | 전류 로그, 하트비트, 전압 | 활성 시간·주기·송신 전력 축소, 차단 |
 | 브라운아웃 리셋이 반복된다 | 3.3V 레일 강하, 부하·배선·커넥터 | 리셋 원인, 전압 파형 | 전원 설계, 디커플링, 부하 분리 |
 | 깨어난 뒤 CAN이 안 된다 | TWAI 재초기화 누락, 트랜시버 standby | 부팅 로그, `RS` 핀 | sleep 시퀀스 역순으로 재초기화 |
-| deep sleep 뒤 시각이 틀린다 | RTC 시각 미유지, SNTP 미실행 | 로그 시각, SNTP 결과 | wake 후 SNTP, TLS 전 시각 확인 |
+| deep sleep 뒤 시각이 틀린다 | RTC 시각 미유지, SNTP 미실행 | 로그 시각, SNTP 결과 | 깨우기 후 SNTP, TLS 전 시각 확인 |
 | OTA 중 sleep에 들어간다 | 절전 태스크가 OTA를 모름 | OTA·sleep 로그 | OTA 중 sleep 금지 플래그 |
 
 ## D.15 신호 처리·데이터 품질

@@ -320,7 +320,7 @@ export async function queryPid(session, pid) {
 
 ### 화면에 표시하기
 
-15.2의 최소 페이지를 아래 마크업으로 바꾸고, 15.4의 `app.js`가 15.2의 예제를 대체한다고 하자. `v-*` 요소는 `render()`가 채운다.
+18.2의 최소 페이지를 아래 마크업으로 바꾸고, 18.4의 `app.js`가 18.2의 예제를 대체한다고 하자. `v-*` 요소는 `render()`가 채운다.
 
 ```html
 <!doctype html>

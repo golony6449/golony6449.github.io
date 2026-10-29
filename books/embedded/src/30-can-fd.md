@@ -210,7 +210,7 @@ fd64   : id=0x789 dlc=64 len=64 fd=True brs=True esi=True data=00 01 02 ... 3e 3
 - `dlc`는 FD 메시지에서 **payload 바이트 수**다. 와이어의 4비트 DLC 코드가 아니다. 12바이트 메시지의 `dlc=12`는 와이어 DLC 코드 9에 해당한다.
 - `bitrate_switch=True`는 BRS를 켠다는 뜻이고, `error_state_indicator=True`는 ESI를 recessive(Error Passive)로 보낸다는 뜻이다. 가상 버스는 이 비트를 그대로 전달하지만, 실제 버스의 오류 상태를 바꾸지는 않는다.
 - **가상 버스는 물리 계층을 흉내 내지 않는다.** 중재·ACK·비트 타이밍·CRC·TDC가 없으므로, 여기서 통과했다고 실제 FD 버스에서 통과한다는 보장이 없다.
-- 실제 인터페이스는 `can.Bus(interface="socketcan", channel="can0", fd=True, bitrate=500000, data_bitrate=2000000)`처럼 FD와 데이터 비트레이트를 지정한다. 인터페이스별 지원 여부와 인자 이름은 python-can 문서와 어댑터 설명을 확인한다.
+- SocketCAN은 비트레이트를 `ip link`로 설정하고, python-can에서는 `can.Bus(interface="socketcan", channel="can0", fd=True)`로 FD 프레임을 연다. `bitrate`/`data_bitrate` 인자를 받는 어댑터 인터페이스도 있으므로, 인자 이름과 지원 여부는 python-can 문서와 어댑터 설명을 확인한다.
 
 ### 9바이트를 보내면 어떻게 되는가
 
@@ -229,7 +229,7 @@ def wire_length(payload_len: int) -> tuple[int, int]:
 
 - 애플리케이션은 9바이트를 보냈다고 생각하지만, 버스에는 12바이트가 나간다. 수신 측은 12바이트를 받고, 애플리케이션 길이를 따로 알아야 한다.
 - DBC나 진단 정의에서 메시지 길이를 정의할 때 이 패딩을 고려한다.
-- `can.Message(..., check=True)`를 쓰면 python-can이 길이와 DLC의 일관성을 검사한다. 가상 버스에서도 비표준 길이를 걸러 내고 싶을 때 유용하다.
+- `can.Message(..., check=True)`는 길이와 DLC의 일관성, remote/FD 플래그 충돌 같은 기본 조건을 검사하지만, FD의 표준 길이(0~8, 12, 16, 20, 24, 32, 48, 64)를 강제하지는 않는다. 비표준 길이는 `wire_length()` 같은 함수로 직접 검사한다.
 
 ## 30.7 Linux SocketCAN에서 CAN FD (문서 대조)
 

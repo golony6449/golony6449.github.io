@@ -712,7 +712,7 @@ end-around carry 합의 반전. 클래식은 데이터만, 확장은 PID+데이�
 LIN 마스터가 프레임 ID의 순서와 주기를 정한 표. 슬레이브는 표를 모르고 헤더에만 반응한다.
 
 **NAD(Node Address for Diagnostics)**
-LIN 진단에서 슬레이브를 구분하는 7비트 주소(1~127). 진단 프레임 0x3C/0x3D는 8바이트와 클래식 체크섬을 쓴다.
+LIN 진단에서 슬레이브를 구분하는 8비트 주소. 0x01~0x7D는 개별 슬레이브, 0x7E는 functional, 0x7F는 broadcast, 0x80~0xFF는 user-defined, 0x00은 go-to-sleep이다. 진단 프레임 0x3C/0x3D는 8바이트와 클래식 체크섬을 쓴다.
 
 **LDF(LIN Description File)**
 LIN 클러스터의 프레임·신호·스케줄을 기술한 파일. CAN의 DBC에 해당한다.
@@ -721,7 +721,7 @@ LIN 클러스터의 프레임·신호·스케줄을 기술한 파일. CAN의 DBC
 ISO 17458의 차량용 결정적 버스. 최대 10Mbps/channel, 2개 channel, TDMA 정적 구간과 동적 구간, 최대 254바이트 프레임을 갖는다. 고성능 샤시·ADAS에 쓰였다.
 
 **100BASE-T1 / 1000BASE-T1**
-IEEE 802.3bw/802.3bp의 차량용 이더넷 PHY. 단일 꼬임쌍으로 100Mbps/1Gbps를 보내고, 15m(Type A)·40m(Type B) 링크를 겨냥한다.
+IEEE 802.3bw/802.3bp의 차량용 이더넷 PHY. 단일 꼬임쌍으로 100Mbps/1Gbps를 보내고, 100BASE-T1은 15m, 1000BASE-T1은 15m(Type A)·40m(Type B) 링크를 겨냥한다.
 
 **10BASE-T1S**
 IEEE 802.3cg의 10Mbps 단일 꼬임쌍 이더넷. 점대점 15m, 멀티드롭 25m·8노드 이상을 지원하고 PLCA로 충돌을 피한다.

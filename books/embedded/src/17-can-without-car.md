@@ -642,7 +642,7 @@ def replay(path: str, channel: str = "vcan0", speed: float = 1.0) -> int:
 
 ## 연습 문제
 
-### 1. vcan 만들기
+### 1. (기초) vcan 만들기
 
 Linux에서 `vcan0`을 만들어 `candump`로 프레임을 보려 한다. 올바른 순서로 나열하라.
 
@@ -653,7 +653,7 @@ ip link add dev vcan0 type vcan
 candump -ta vcan0
 ```
 
-### 2. 왜 응답이 없나
+### 2. (중급) 왜 응답이 없나
 
 vcan0에서 `cansend vcan0 7DF#02010C0000000000`을 보냈다. `candump`에는 프레임이 보이지만 OBD 응답은 없다.
 
@@ -661,7 +661,7 @@ vcan0에서 `cansend vcan0 7DF#02010C0000000000`을 보냈다. `candump`에는 �
 2. 응답을 받으려면 무엇을 추가해야 하는가?
 3. 이 상황을 웹 개발에 비유하면 무엇인가?
 
-### 3. virtual과 vcan
+### 3. (중급) virtual과 vcan
 
 python-can virtual로 만든 `vcan0` 버스가 있는데, 다른 터미널의 프로그램이 프레임을 받지 못한다.
 
@@ -669,7 +669,7 @@ python-can virtual로 만든 `vcan0` 버스가 있는데, 다른 터미널의 �
 2. 두 프로세스가 통신하려면 어떤 선택지가 있는가?
 3. virtual의 `channel="vcan0"`은 Linux vcan0과 같은 것인가?
 
-### 4. ELM327-emulator
+### 4. (중급) ELM327-emulator
 
 ELM327-emulator를 `-s car -n 35000`으로 실행하고 7장 대시보드를 붙였다. `ATDPN`은 `A6`, PID 0C는 어떤 값이 나왔다.
 
@@ -677,7 +677,7 @@ ELM327-emulator를 `-s car -n 35000`으로 실행하고 7장 대시보드를 붙
 2. 이 에뮬레이터로 시험할 수 있는 것은 무엇인가?
 3. 실제 차량에서 에뮬레이터의 UDS 쓰기 명령을 보내면 왜 안 되는가?
 
-### 5. 로그 재생
+### 5. (중급) 로그 재생
 
 `capture.log`에 실제 차량에서 기록한 프레임이 있다. 이 로그를 재생해 대시보드를 시험하려 한다.
 

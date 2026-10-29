@@ -414,7 +414,7 @@ impl Ring {
 
 ## 연습 문제
 
-### 1. 소유권
+### 1. (중급) 소유권
 
 다음 코드가 컴파일되지 않는 이유를 쓰고, 두 가지 수정 방법을 제시하라.
 
@@ -424,7 +424,7 @@ let rpm = parse_rpm(frame);
 println!("{:?}", frame);
 ```
 
-### 2. 빌림과 수명
+### 2. (중급) 빌림과 수명
 
 다음 함수가 컴파일되지 않는 이유를 설명하고, 소유권을 반환하도록 고쳐라.
 
@@ -435,19 +435,19 @@ fn make_frame() -> &[u8] {
 }
 ```
 
-### 3. `embedded-hal`
+### 3. (중급) `embedded-hal`
 
 1. `SpiBus`와 `OutputPin`을 제네릭으로 받는 드라이버의 장점 두 가지를 쓰라.
 2. `SPI::Error`와 `CS::Error`를 하나의 `SensorError`로 묶는 이유는 무엇인가?
 3. mock 구현으로 무엇을 시험할 수 있는가?
 
-### 4. Embassy
+### 4. (심화) Embassy
 
 1. Embassy 태스크에서 `loop { }`를 돌며 긴 계산을 하면 어떤 일이 생기는가?
 2. JavaScript의 `await`와 Embassy의 `.await`의 공통점과 차이를 쓰라.
 3. FreeRTOS 태스크와 Embassy 태스크의 스택·전환 방식 차이를 쓰라.
 
-### 5. ESP32 Rust 현황
+### 5. (중급) ESP32 Rust 현황
 
 1. ESP32(클래식)를 Rust로 빌드할 때 표준 rustup만으로 부족한 이유는 무엇인가?
 2. `esp-hal`과 `esp-idf-svc`의 차이를 한 문장으로 쓰라.

@@ -437,7 +437,7 @@ def publish_loop(reader, broker: str = "broker.example.com") -> None:
 
 ## 연습 문제
 
-### 1. MQTT 토픽 설계
+### 1. (중급) MQTT 토픽 설계
 
 차량 데이터를 MQTT로 보내려 한다.
 
@@ -446,7 +446,7 @@ def publish_loop(reader, broker: str = "broker.example.com") -> None:
 3. `live` 토픽 페이로드에 반드시 넣어야 할 필드는 무엇인가?
 4. 명령 토픽을 만들지 않는 이유는 무엇인가?
 
-### 2. 프로토콜 선택
+### 2. (기초) 프로토콜 선택
 
 다음 상황에 맞는 프로토콜을 고르고 이유를 쓰라.
 
@@ -454,19 +454,19 @@ def publish_loop(reader, broker: str = "broker.example.com") -> None:
 2. 브라우저에서 차량 상태를 실시간으로 갱신한다.
 3. 서버 간 범용 API를 만든다.
 
-### 3. Modbus 주소
+### 3. (중급) Modbus 주소
 
 1. 문서에 "register 1"이라고 적혀 있을 때 PDU 주소가 0인지 1인지 확인해야 하는 이유는 무엇인가?
 2. 32비트 값의 워드 순서가 문서와 다르면 어떤 증상이 나는가?
 3. 무엇을 먼저 확인해야 하는가?
 
-### 4. BLE GATT
+### 4. (기초) BLE GATT
 
 1. Service와 Characteristic의 관계를 설명하라.
 2. CCCD는 무엇을 하는가?
 3. 센서 값이 바뀔 때마다 보내려면 어떤 방식을 쓰는가?
 
-### 5. 대역폭 계산
+### 5. (중급) 대역폭 계산
 
 6개 PID를 초당 10번, PID당 8바이트로 보낸다고 가정하자.
 

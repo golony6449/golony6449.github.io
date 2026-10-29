@@ -69,6 +69,11 @@
 이 책의 설명은 다음 표준을 바탕으로 한다. 원문은 유료이므로 직접 인용하지 않았다.
 
 - SAE J1979 / J1979-DA — E/E Diagnostic Test Modes, PID 정의.
+- SAE J1979-2 — OBDonUDS, UDS 기반 OBD-II 서비스.
+- SAE J1939-11/-14/-21/-71/-73/-81 — 상용차 CAN 물리·데이터링크·응용·진단·네트워크 관리.
+- CiA 301 — CANopen application layer and communication profile.
+- IEC 61162-3 — 선박 항해·무선 통신 장비의 디지털 인터페이스(NMEA 2000).
+- ISO 11783 — 농림업 기계의 CAN 기반 네트워크.
 - SAE J1962 — Diagnostic Connector.
 - ISO 15765-2 — Diagnostic communication over CAN, transport protocol.
 - ISO 15765-4 — Requirements for emissions-related systems.
@@ -174,3 +179,29 @@
 - Diadrom, "Securing the diagnostic channel: ISO 21434, UN R155 and UDS 0x29" — 0x27 시드-키의 한계, 0x29의 인증서·상호 인증·역할·폐기. <https://diadrom.com/insights/securing-the-diagnostic-channel/>
 - IETF RFC 2104, "HMAC: Keyed-Hashing for Message Authentication" — HMAC 구성. <https://www.rfc-editor.org/rfc/rfc2104>
 - IETF RFC 8446, "The Transport Layer Security (TLS) Protocol Version 1.3" — TLS 1.3의 인증·기밀성·무결성. <https://www.rfc-editor.org/rfc/rfc8446>
+
+## C.12 J1939·CANopen·NMEA 2000
+
+접속일은 2026-10-29이다. SAE J1939·CiA 301·IEC 61162-3 원문은 유료이므로, 이 책은 공개 요약·공개 구현·제조사 공개 문서를 2차 근거로 사용했다. 실제 구현에서는 해당 표준의 개정판을 확인한다.
+
+- SAE, "J1939: Serial Control and Communications Heavy Duty Vehicle Network" — J1939-11/-14(물리), -21(데이터링크·TP), -71(응용), -73(진단), -81(네트워크 관리) 표준 개요(유료). <https://www.sae.org/standards/content/j1939/>
+- Linux kernel, "J1939" — `CAN_J1939` 소켓, PGN/SA/DA, PDU1/PDU2, 주소 클레임 250ms, TP/ETP 최대 크기. <https://docs.kernel.org/networking/j1939.html>
+- CSS Electronics, "SAE J1939 Explained" — 29비트 ID, PGN/SPN, PDU1/PDU2, 트럭·건설기계 응용 개요. <https://www.csselectronics.com/pages/j1939-explained-simple-intro-tutorial>
+- Copperhill Technologies, "Guide to SAE J1939 Transport Protocol (TP)" — TP.CM/TP.DT, BAM/RTS/CTS, 1785바이트, 7바이트 패킷, 0xFF 패딩. <https://copperhilltech.com/blog/guide-to-sae-j1939-transport-protocol-tp-message-packaging-and-reassembly-/>
+- Simma Software, "J1939 Transport Protocol" — BAM/RTS/CTS, 패킷 간 50~200ms, 750ms 타임아웃. <https://simmasoftware.com/j1939-transport-protocol/>
+- Simma Software, "J1939 DM1 vs DM2 Diagnostic Messages" — DM1 PGN 65226, DM2 PGN 65227, 램프 상태, SPN/FMI/OC/CM, 1초 주기. <https://simmasoftware.com/j1939-dm1-vs-dm2-diagnostic-messages/>
+- Simma Software, "J1939 Source Address" — Engine #1 0x00, Transmission #1 0x03, null 0xFE, global 0xFF. <https://simmasoftware.com/products/j1939/source-address/>
+- python-can-j1939, "SAE J1939 support for Python" — python-can 4.x에서 분리된 J1939 패키지. <https://github.com/juergenH87/python-can-j1939>
+- CiA, "CANopen" — CiA 301 4.2.0, 11비트 CAN ID, 10k~1Mbit/s, 객체 사전 index 16비트·subindex 8비트, 1000h~1FFFh/2000h~5FFFh/6000h~9FFFh. <https://www.can-cia.org/can-knowledge/canopen/>
+- canopen, "canopen documentation" — Network/Node, Object Dictionary, NMT, SDO, PDO, heartbeat, EDS. <https://canopen.readthedocs.io/en/latest/>
+- canopen, "python-canopen" — LocalNode/RemoteNode, SDO client/server, PDO, NMT. <https://github.com/christiansandberg/canopen>
+- NMEA, "NMEA 2000" — 선박 전자장비 네트워크, IEC 61162-3, NMEA 인증. <https://www.nmea.org/nmea-2000.html>
+- Kvaser, "NMEA 2000" — 250kbit/s, 29비트 CAN, PGN, ISO 11783/J1939 기반. <https://kvaser.com/about-can/higher-layer-protocols/nmea-2000/>
+- Warwick Control, "NMEA 2000 Introduction for Developers" — 250kbit/s, 50노드, 120Ω, PGN, fast packet, NMEA 인증 요구. <https://nmea2000.warwickcontrol.com/nmea2000/nmea2000-introduction-for-developers/>
+- canboat, "NMEA 2000 PGN database" — PGN 60928/127250/129025/129029 필드·해상도, fast packet 223바이트. <https://canboat.github.io/canboat/canboat.html>
+- IEC, "IEC 61162-3" — NMEA 2000의 국제 표준(유료). <https://webstore.iec.ch/>
+- Wikipedia, "OBD-II PIDs" — PID 0x5B(하이브리드 배터리 잔량), PID 0x9A(배터리 전압·전류) 등 표준 PID 목록. <https://en.wikipedia.org/wiki/OBD-II_PIDs>
+- SAE, "J1979-2 / J1979-DA" — OBDonUDS, PID/DID 디지털 부속 문서(유료). <https://www.sae.org/standards/content/j1979/2_202104/>
+- UNECE, "Summary UNR154 LDV OBFCM technical exploration" — PEV 배터리 PID 0x5B/0x9A/0xB2/0xB7 정의와 규제 논의. <https://wiki.unece.org/download/attachments/265978082/Summary%20UNR154%20LDV%20OBFCM%20technical%20exploration%20-%20WLTP%20Ad-hoc.pdf>
+- California Air Resources Board, "§ 1962.5 Data Standardization Requirements for 2026 and Subsequent Model Year Light-Duty Zero Emission Vehicles" — ZEV 배터리 데이터 표준화와 J1979-2/J1979-DA 참조. <https://ww2.arb.ca.gov/sites/default/files/2021-12/draft%20ZEV%20standardized%20data%201962.5.pdf>
+- ISO, "ISO 11783" — 농림업 트랙터·기계의 CAN 기반 네트워크(유료). NMEA 2000·J1939 데이터링크의 참조 표준.

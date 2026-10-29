@@ -10,14 +10,14 @@
 **보율(baud rate)**
 초당 심볼 수. UART는 1심볼이 1비트라 bps와 같다고 본다. 8N1에서 115200 baud는 이론상 초당 약 11,520바이트다.
 
-**CRC (Cyclic Redundancy Check)**
+**CRC(Cyclic Redundancy Check)**
 연속된 비트 오류 검출에 강한 체크섬. poly·init·refin/refout·xorout 파라미터와 계산 범위, 바이트 순서를 맞춰야 한다. 오류 검출이지 인증은 아니다.
 
-**DLC (Data Length Code)**
+**DLC(Data Length Code)**
 클래식 CAN 프레임에서 데이터 길이를 0~8로 인코딩하는 4비트 필드. 9 이상은 클래식 CAN에서 8로 취급된다.
 
 **엔디언(endianness)**
-정수를 바이트로 표현할 때의 순서. 빅엔디언은 상위 바이트부터, 리틀엔디언은 하위 바이트부터 쓴다. 프로토콜에서는 항상 명시한다.
+정수를 바이트로 표현할 때의 순서. 빅 엔디언은 상위 바이트부터, 리틀 엔디언은 하위 바이트부터 쓴다. 프로토콜에서는 항상 명시한다.
 
 **프레이밍(framing)**
 바이트 스트림에서 "어디서부터 어디까지가 한 메시지인가"를 정하는 규칙. 구분자, 길이 접두, 고정 크기, COBS, SLIP 등이 있다.
@@ -28,22 +28,22 @@
 **길이 접두(length prefix)**
 `[LEN][PAYLOAD]`처럼 프레임 앞에 길이를 두는 방식. 최대 길이 검증과 부분 프레임 타임아웃이 필수다.
 
-**COBS (Consistent Overhead Byte Stuffing)**
+**COBS(Consistent Overhead Byte Stuffing)**
 페이로드에서 `0x00`을 없애고 프레임 끝에 `0x00`을 붙여 경계로 쓰는 방식. 254바이트마다 최대 1바이트 오버헤드가 든다.
 
 **SLIP**
 `END=0xC0`, `ESC=0xDB`로 프레임을 구분하는 방식. `0xC0`은 `0xDB 0xDC`, `0xDB`는 `0xDB 0xDD`로 이스케이프한다.
 
-**TLV (Type-Length-Value)**
+**TLV(Type-Length-Value)**
 타입·길이·값을 순서대로 붙여 가변 길이 필드를 명시하는 형식.
 
 **패리티(parity)**
 UART에서 1비트 오류를 검출하는 선택 비트. Even/Odd가 있으며 정정은 못 한다. 8N1은 패리티 없음이다.
 
-**PCI (Protocol Control Information)**
+**PCI(Protocol Control Information)**
 ISO-TP 프레임 앞부분의 제어 정보. SF/CF는 1바이트, FF는 2바이트, FC는 3바이트를 쓴다.
 
-**PDU (Protocol Data Unit)**
+**PDU(Protocol Data Unit)**
 프로토콜이 주고받는 데이터 단위. Modbus TCP에서는 MBAP 헤더 뒤에 PDU가 온다.
 
 **SOF / EOF**
@@ -58,7 +58,7 @@ ISO-TP 흐름 제어에서 수신측이 알려 주는 연속 프레임 간 최�
 **MBAP**
 Modbus TCP의 헤더. 트랜잭션 ID, 프로토콜 ID, 길이, 유닛 ID를 담는다.
 
-**LRC (Longitudinal Redundancy Check)**
+**LRC(Longitudinal Redundancy Check)**
 Modbus ASCII에서 쓰는 체크섬.
 
 ## A.2 버스와 전기
@@ -99,7 +99,7 @@ SDA/SCL 두 선의 동기·오픈 드레인 버스. 7비트 주소로 장치를 
 **SPI**
 SCLK/MOSI/MISO/CS 네 선의 동기·전이중 버스. CS로 슬레이브를 선택하고, ACK와 기본 오류 검출이 없다.
 
-**CS (Chip Select)**
+**CS(Chip Select)**
 SPI에서 슬레이브를 선택하는 신호. 보통 active low이며 트랜잭션 동안 low를 유지한다.
 
 **CPOL / CPHA**
@@ -107,6 +107,12 @@ SPI 클록의 idle 상태(CPOL)와 데이터 샘플 에지(CPHA). 네 가지 모
 
 **CAN**
 차동 신호를 쓰는 다중 마스터 버스. ID 우선순위 중재, CRC·ACK·비트 스터핑·오류 카운터를 갖는다.
+
+**CAN ID**
+프레임의 중재 필드에 실리는 식별자. 표준 프레임은 11비트, 확장 프레임은 29비트다. 값이 작을수록 중재에서 이기며, 목적지 주소가 아니라 메시지 종류를 나타내는 경우가 많다.
+
+**프레임(frame) / 메시지(message)**
+프레임은 버스 위에서 실제로 오가는 전송 단위이고, 메시지는 애플리케이션이 다루는 논리 단위다. CAN에서는 한 프레임이 곧 한 메시지인 경우가 많지만, ISO-TP·J1939 TP·NMEA 2000 fast packet처럼 여러 프레임을 조립해 하나의 메시지를 만든다. 이 책은 버스 위의 단위를 프레임, 상위 프로토콜의 논리 단위를 메시지로 구분해 쓴다.
 
 **dominant / recessive**
 CAN의 두 논리 레벨. dominant(0)가 recessive(1)를 이기며, 버스는 wired-AND처럼 동작한다.
@@ -126,10 +132,10 @@ CAN 노드가 오류 누적으로 버스에서 스스로 빠지는 상태. 128�
 **CAN FD**
 페이로드를 최대 64바이트까지 늘리고 데이터 구간을 빠르게 전환하는 CAN 확장. FDF 비트, CRC 17/21, RTR 없음이 특징이다.
 
-**BRS (Bit Rate Switch)**
+**BRS(Bit Rate Switch)**
 CAN FD에서 데이터 구간만 더 빠른 비트레이트로 전환하는 기능.
 
-**ISO-TP (ISO 15765-2)**
+**ISO-TP(ISO 15765-2)**
 8바이트를 넘는 CAN 메시지를 SF/FF/CF/FC로 나눠 주고받는 전송 계층.
 
 **J1939**
@@ -143,19 +149,19 @@ CAN FD에서 데이터 구간만 더 빠른 비트레이트로 전환하는 기�
 
 ## A.3 MCU와 펌웨어
 
-**MCU (Microcontroller Unit)**
+**MCU(Microcontroller Unit)**
 CPU·플래시·RAM·주변장치를 한 칩에 넣은 컴퓨터. 보통 베어메탈 또는 RTOS에서 동작한다.
 
-**SBC (Single Board Computer)**
+**SBC(Single Board Computer)**
 라즈베리파이처럼 Linux를 돌리는 단일 보드 컴퓨터. MCU보다 메모리·저장장치가 크지만 실시간성과 전력에서 불리할 수 있다.
 
 **베어메탈(bare metal)**
 OS 없이 `main()`과 인터럽트로 동작하는 환경. 프로세스·가상 메모리·스케줄러가 없다.
 
-**RTOS (Real-Time Operating System)**
+**RTOS(Real-Time Operating System)**
 태스크·큐·뮤텍스·우선순위를 제공하는 실시간 OS. 우선순위 역전과 태스크 스택을 설계해야 한다.
 
-**ISR (Interrupt Service Routine)**
+**ISR(Interrupt Service Routine)**
 하드웨어 이벤트가 발생하면 실행되는 함수. 짧게 유지하고, 블로킹·동적 할당·`printf`를 피한다.
 
 **`volatile`**
@@ -179,19 +185,19 @@ OS 없이 `main()`과 인터럽트로 동작하는 환경. 프로세스·가상 
 **스택 하이워터마크(stack high-water mark)**
 스택이 최대로 얼마나 사용되었는지 측정한 값. 오버플로를 예방하는 데 쓴다.
 
-**GPIO (General-Purpose Input/Output)**
+**GPIO(General-Purpose Input/Output)**
 범용 입출력 핀. 입력 풀업/풀다운, 출력 전류 한도, 5V tolerant 여부를 확인한다.
 
-**ADC (Analog-to-Digital Converter)**
+**ADC(Analog-to-Digital Converter)**
 아날로그 전압을 디지털 값으로 바꾸는 주변장치. 해상도·기준 전압·입력 범위·샘플링 시간을 본다.
 
-**PWM (Pulse Width Modulation)**
+**PWM(Pulse Width Modulation)**
 주기를 두고 high 비율을 바꿔 평균 전압을 제어하는 방식. 주파수와 분해능은 트레이드오프다.
 
-**DMA (Direct Memory Access)**
+**DMA(Direct Memory Access)**
 CPU를 거치지 않고 주변장치와 메모리 사이를 전송하는 기능. 버퍼를 조기 재사용하지 않는다.
 
-**LDO (Low-Dropout regulator)**
+**LDO(Low-Dropout regulator)**
 USB 5V에서 3.3V를 만드는 데 쓰는 선형 레귤레이터. 누설 전류와 발열을 고려한다.
 
 **부트로더(bootloader)**
@@ -203,13 +209,13 @@ MCU 디버깅 인터페이스. 브레이크포인트, 변수 관찰, 레지스�
 **strapping pin**
 부팅 모드를 결정하는 핀. ESP32의 일부 핀은 부팅 시 상태가 중요하다.
 
-**OTA (Over-The-Air)**
+**OTA(Over-The-Air)**
 네트워크로 펌웨어를 업데이트하는 것. A/B 파티션, 서명 검증, 롤백을 전제로 설계한다.
 
 **프로비저닝(provisioning)**
 장치에 Wi-Fi 자격 증명, 키, 초기 설정을 넣는 과정. 하드코딩은 배포에서 문제가 된다.
 
-**PIO (Programmable I/O)**
+**PIO(Programmable I/O)**
 RP2040이 제공하는 Programmable I/O.
 
 **스택(stack)**
@@ -227,7 +233,7 @@ RP2040이 제공하는 Programmable I/O.
 **메모리 순서(memory ordering)**
 여러 문맥이 공유하는 메모리 접근의 가시성 순서. C11 `memory_order_acquire`/`release`로 데이터 발행과 소비를 동기화한다.
 
-**SPSC (Single Producer Single Consumer)**
+**SPSC(Single Producer Single Consumer)**
 생산자 하나, 소비자 하나인 큐 구조. 인덱스 두 개와 release/acquire로 락 없이 구현할 수 있다.
 
 **태스크(task)**
@@ -271,7 +277,7 @@ ESP-IDF가 태스크별로 리셋을 받아 정지·굶주림을 감시하는 �
 **토픽(topic)**
 MQTT에서 메시지를 분류하는 `/` 계층 문자열. `+`와 `#` 와일드카드를 쓴다.
 
-**QoS (Quality of Service)**
+**QoS(Quality of Service)**
 MQTT의 전달 보장 수준. 0=최대 한 번, 1=최소 한 번, 2=정확히 한 번. 브로커-클라이언트 구간의 보장이다.
 
 **retain**
@@ -280,7 +286,7 @@ MQTT 브로커가 토픽의 마지막 메시지를 저장해 새 구독자에게
 **will**
 MQTT 클라이언트가 비정상 종료할 때 브로커가 대신 발행하는 메시지.
 
-**BLE (Bluetooth Low Energy)**
+**BLE(Bluetooth Low Energy)**
 저전력 근거리 무선. GAP으로 광고/연결하고 GATT 서비스/특성으로 데이터를 주고받는다.
 
 **GAP / GATT**
@@ -321,19 +327,22 @@ ISM 대역의 장거리·저전력 프로토콜. 게이트웨이와 duty cycle �
 
 ## A.5 차량 진단(OBD-II·UDS)
 
-**OBD-II (On-Board Diagnostics II)**
+**OBD-II(On-Board Diagnostics II)**
 차량의 배출가스 관련 진단을 표준화한 규격. SAE J1962 16핀 커넥터, SAE J1979 서비스/PID, ISO 15765-4 CAN 등을 포함한다.
 
 **OBD-II 커넥터**
 16핀 J1962 커넥터. 4번 차체 접지, 5번 신호 접지, 6번 CAN_H, 14번 CAN_L, 16번 +12V, 7/15번 K-line/L-line, 나머지는 제조사 재량이다.
 
-**PID (Parameter ID)**
+**ECU(Electronic Control Unit)**
+전자 제어 장치. 엔진 ECU, 변속기 ECU처럼 대상 시스템을 앞에 붙여 부른다. 차량·제조사에 따라 PCM(파워트레인 제어 모듈), TCM(변속기 제어 모듈) 등 다른 이름을 쓰기도 한다. 이 책은 본문에서 ECU로 통일한다.
+
+**PID(Parameter ID)**
 OBD-II Mode 01에서 읽는 표준 파라미터 번호. 예: 0C 엔진 회전수, 0D 차속, 05 냉각수 온도. PID마다 데이터 길이와 공식이 다르다.
 
 **Mode / Service**
 OBD-II 요청의 종류. 01 현재 데이터, 03 저장 DTC, 04 DTC 삭제, 09 차량 정보, 0A permanent DTC 등이 있다. 최신 표준은 "서비스"라고 부른다.
 
-**DTC (Diagnostic Trouble Code)**
+**DTC(Diagnostic Trouble Code)**
 고장 코드. P(파워트레인), B(바디), C(샤시), U(네트워크) 계열이 있고, 2바이트로 인코딩된다.
 
 **Freeze frame**
@@ -342,16 +351,16 @@ DTC가 발생한 순간의 PID 스냅샷. Mode 02로 읽는다.
 **Readiness monitor**
 배출가스 관련 자기 진단의 준비 상태. DTC를 지우면 초기화될 수 있고, 배출가스 검사에서 불합격할 수 있다.
 
-**DID (Data Identifier)**
+**DID(Data Identifier)**
 UDS `0x22`에서 읽는 2바이트 데이터 식별자. 제조사마다 의미가 다르고, 같은 DID도 ECU마다 다를 수 있다.
 
-**UDS (Unified Diagnostic Services)**
+**UDS(Unified Diagnostic Services)**
 ISO 14229 진단 프로토콜. `0x22` DID 읽기, `0x19` DTC 읽기, `0x10` 세션, `0x2E` 쓰기, `0x31` 루틴 등을 정의한다. CAN 위에서는 ISO-TP를 쓴다.
 
-**NRC (Negative Response Code)**
+**NRC(Negative Response Code)**
 UDS 부정 응답 `7F <SID> <NRC>`의 이유 코드. 0x31은 범위 밖(DID 없음), 0x78은 응답 대기, 0x7F는 현재 세션 미지원이다.
 
-**ISO-TP (ISO 15765-2)**
+**ISO-TP(ISO 15765-2)**
 CAN 한 프레임(8바이트)보다 긴 메시지를 SF/FF/CF/FC로 나눠 보내는 전송 계층.
 
 **SF / FF / CF / FC**
@@ -366,7 +375,7 @@ OBD-II의 `7E0`~`7E7`. 특정 ECU에 보내는 요청 주소. 응답은 `7E8`~`7
 **ELM327**
 OBD-II 포트와 PC의 UART/RS-232 사이를 해석하는 칩/어댑터. AT 명령과 프롬프트 `>`를 쓴다. 클론이 많고, 존재하지 않는 `v1.5`를 보고하는 제품도 있다.
 
-**DPF (Diesel Particulate Filter)**
+**DPF(Diesel Particulate Filter)**
 디젤 배기가스의 그을음을 거르는 필터. 그을음이 쌓이면 재생(regeneration)으로 태운다. 강제 재생은 정비 절차이며 고온·화재 위험이 있다.
 
 **재생(regeneration)**
@@ -375,13 +384,13 @@ DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 자연(p
 **MCP2515**
 SPI로 MCU에 붙는 CAN 컨트롤러. Raspberry Pi 같은 SBC에 CAN을 추가할 때 쓴다.
 
-**SoC (State of Charge)**
+**SoC(State of Charge)**
 배터리에 남아 있는 충전량의 비율. 전기차·하이브리드의 BMS가 관리하며, 표준 OBD-II PID만으로 항상 읽을 수 있는 값은 아니다.
 
-**SOH (State of Health)**
+**SOH(State of Health)**
 배터리의 현재 용량·성능이 초기 상태에 비해 어느 정도인지 나타내는 지표. 제조사·규제마다 정의가 다르다.
 
-**BMS (Battery Management System)**
+**BMS(Battery Management System)**
 구동 배터리의 셀 전압·온도·전류·절연·충전 상태를 관리하는 시스템. 상세 데이터는 제조사 진단(Mode 22/UDS 0x22)으로 읽는 경우가 많다.
 
 **J1979-2 / OBDonUDS**
@@ -416,7 +425,7 @@ ELM327 어댑터와 ECU 응답을 흉내 내는 파이썬 패키지. TCP·시리
 **Web Bluetooth / BLE GATT**
 브라우저에서 BLE 기기의 GATT 서비스·특성에 접근하는 API. 블루투스 클래식 SPP는 직접 다루지 못한다.
 
-**HIL (Hardware-in-the-Loop)**
+**HIL(Hardware-in-the-Loop)**
 실제 ECU를 실시간 시뮬레이션된 plant·I/O에 연결해 시험하는 방식. 재현성은 높지만 실제 도로·EMC를 대신하지 못한다.
 
 **ASC / BLF / MF4**
@@ -428,13 +437,13 @@ SQLite는 파일 기반 SQL DB, InfluxDB는 시계열 DB(TSDB)다. CAN 로그 �
 **SOME/IP**
 AUTOSAR의 서비스 지향 미들웨어. RPC·이벤트·직렬화를 제공하고 UDP/TCP 위에서 동작한다.
 
-**DoIP (Diagnostics over IP)**
+**DoIP(Diagnostics over IP)**
 ISO 13400-2의 IP 기반 진단. 차량 이더넷에서 TCP/UDP 13400 포트를 쓴다.
 
 **CAN XL**
 ISO 11898-1:2024의 CAN 세대. 1~2048바이트 데이터, 11비트 우선순위 ID + 32비트 수용 필드, 두 개의 CRC를 갖는다.
 
-**SIC (Signal Improvement Capability)**
+**SIC(Signal Improvement Capability)**
 CAN FD/XL의 고속 데이터 구간에서 신호 품질을 개선하는 트랜시버 기능. CAN XL은 SIC XL 트랜시버로 20Mbps 이상을 겨냥한다.
 
 **샘플 포인트(sample point)**
@@ -506,13 +515,13 @@ ESP-IDF를 Rust로 감싼 std 계열 crate. Wi-Fi·HTTP·MQTT·NVS·OTA 같은 �
 **신뢰 경계(trust boundary)**
 한쪽에서 온 데이터를 다른 쪽에서 신뢰하기 시작하는 경계. 차량에서는 텔레매틱스/IVI와 안전-critical 도메인 사이, OBD 포트와 내부 버스 사이가 대표적이다.
 
-**MAC (Message Authentication Code)**
+**MAC(Message Authentication Code)**
 키를 가진 주체만 만들 수 있는 인증 태그. 무결성과 데이터 출처를 보장하지만, 기밀성(암호화)은 제공하지 않는다.
 
-**HMAC (Hash-based MAC)**
+**HMAC(Hash-based MAC)**
 암호학적 해시(SHA-256 등)와 비밀 키로 만드는 MAC. 이 책의 가상 실습은 HMAC-SHA256을 잘라 쓴다. 실제 SecOC는 AES-128 CMAC을 쓴다.
 
-**CMAC (Cipher-based MAC)**
+**CMAC(Cipher-based MAC)**
 블록 암호(AES 등)를 기반으로 만드는 MAC. AUTOSAR SecOC는 AES-128 CMAC을 쓴다.
 
 **신선도 값(freshness value)**
@@ -521,7 +530,7 @@ ESP-IDF를 Rust로 감싼 std 계열 crate. Wi-Fi·HTTP·MQTT·NVS·OTA 같은 �
 **재전송 공격(replay attack)**
 정상 메시지를 녹음했다가 나중에 그대로 다시 보내는 공격. MAC만으로는 막을 수 없고, 신선도 값이 필요하다.
 
-**SecOC (Secure Onboard Communication)**
+**SecOC(Secure Onboard Communication)**
 AUTOSAR의 PDU 단위 인증 규격. Authentic I-PDU에 Authenticator(MAC)와 선택적 신선도 값을 붙여 진위·신선도를 검증한다. 기밀성은 범위가 아니다.
 
 **잘라 낸 MAC(truncated MAC)**
@@ -533,16 +542,16 @@ AUTOSAR의 PDU 단위 인증 규격. Authentic I-PDU에 Authenticator(MAC)와 �
 **도메인 분리(domain separation)**
 파워트레인·섀시·바디·인포테인먼트·텔레매틱스를 별도 버스/영역으로 나누는 설계. 한 영역의 침해가 다른 영역으로 번지는 것을 줄인다.
 
-**IDS (Intrusion Detection System)**
+**IDS(Intrusion Detection System)**
 차량 내부 네트워크의 이상을 탐지하는 시스템. 허용 ID, 주기, 클록 오차, payload 패턴, 전압 파형 등을 본다. 탐지는 차단이 아니다.
 
-**CIDS (Clock-based IDS)**
+**CIDS(Clock-based IDS)**
 주기 메시지의 도착 간격으로 ECU별 클록 오차를 지문처럼 학습해 위조·변조·마스커레이드를 탐지하는 연구. USENIX Security 2016에서 발표되었다.
 
-**CSMS (Cyber Security Management System)**
+**CSMS(Cyber Security Management System)**
 UN R155가 요구하는 사이버보안 관리 체계. 위험 기반 프로세스, 거버넌스, 공급망 관리, 사고 탐지·대응, Fleet 모니터링을 포함한다.
 
-**SUMS (Software Update Management System)**
+**SUMS(Software Update Management System)**
 UN R156가 요구하는 소프트웨어 업데이트 관리 체계. OTA의 안전·보안, 무결성·진위, RXSWIN, 롤백·안전 상태를 포함한다.
 
 **ISO/SAE 21434**
@@ -557,10 +566,10 @@ UDS 0x29 Authentication의 두 가지 개념. APCE는 PKI 인증서 교환, ACR�
 **RXSWIN**
 UN R156에서 요구하는 소프트웨어 식별자. 어떤 규정 승인에 어떤 소프트웨어가 관련되는지 추적한다.
 
-**V-SOC (Vehicle Security Operations Center)**
+**V-SOC(Vehicle Security Operations Center)**
 차량 Fleet의 보안 경고·사고를 모니터링하고 대응하는 조직·체계. IDS 경고와 로그가 입력이 된다.
 
-**SBOM (Software Bill of Materials)**
+**SBOM(Software Bill of Materials)**
 소프트웨어 구성 요소·버전·의존성 목록. 공급망 투명성과 취약점 추적에 쓴다.
 
 **진단 방화벽(diagnostic firewall)**
@@ -574,25 +583,25 @@ OBD 포트·정비 도구가 접근할 수 있는 ECU·서비스·세션을 제�
 **J1939**
 트럭·버스·건설기계·농기계의 CAN 기반 응용 프로토콜. 29비트 ID, PGN/SPN, 소스 주소, TP, DM1을 정의한다.
 
-**PGN (Parameter Group Number)**
+**PGN(Parameter Group Number)**
 J1939에서 메시지 묶음을 나타내는 번호. EDP/DP/PF/PS로 구성되며, PDU1에서는 PS가 목적지 주소다.
 
-**SPN (Suspect Parameter Number)**
+**SPN(Suspect Parameter Number)**
 J1939 PGN 안의 개별 신호 번호. 해상도·오프셋이 SPN마다 다르다. OBD-II PID와 비슷하지만 접근 방식이 다르다.
 
 **PDU1 / PDU2**
 J1939의 PGN 형식. PF < 240이면 PDU1(PS는 목적지 주소), PF ≥ 240이면 PDU2(PS는 그룹 확장)다.
 
-**BAM (Broadcast Announce Message)**
+**BAM(Broadcast Announce Message)**
 J1939 TP의 broadcast 방식. TP.CM 제어 바이트 `0x20`, 목적지 `0xFF`, 패킷 간 50~200ms다.
 
 **DM1 / DM2 / DM3**
 J1939 진단 메시지. DM1은 활성 고장(주기 broadcast), DM2는 과거 고장(요청), DM3는 과거 고장 삭제(실차에서 보내지 않음)다.
 
-**FMI (Failure Mode Identifier)**
+**FMI(Failure Mode Identifier)**
 J1939 DTC에서 고장의 종류를 나타내는 5비트 값. 정상 범위 위/아래, 전압 높음/낮음, 회로 열림 등이다.
 
-**OC (Occurrence Count)**
+**OC(Occurrence Count)**
 J1939 DTC에서 같은 고장이 발생한 횟수를 나타내는 7비트 값. 127은 사용할 수 없음이다.
 
 **CANopen**
@@ -601,25 +610,25 @@ CiA 301 기반의 산업용 CAN 응용 프로토콜. 11비트 ID, 객체 사전,
 **객체 사전(Object Dictionary, OD)**
 CANopen 장치가 제공하는 값·설정의 표. 16비트 index와 8비트 subindex로 접근한다.
 
-**EDS (Electronic Data Sheet)**
+**EDS(Electronic Data Sheet)**
 CANopen 객체 사전을 텍스트로 표현한 파일. 웹의 OpenAPI 문서에 해당한다.
 
-**NMT (Network Management)**
+**NMT(Network Management)**
 CANopen 노드의 상태 기계. Initialisation, Pre-operational, Operational, Stopped가 있다.
 
-**SDO (Service Data Object)**
+**SDO(Service Data Object)**
 CANopen의 요청/응답 객체 접근. `0x600+NodeID` 요청, `0x580+NodeID` 응답을 쓴다.
 
-**PDO (Process Data Object)**
+**PDO(Process Data Object)**
 CANopen의 주기·이벤트 데이터. 객체를 매핑해 최대 8바이트(클래식 CAN)로 보낸다.
 
-**COB-ID (Communication Object Identifier)**
+**COB-ID(Communication Object Identifier)**
 CANopen 통신 객체의 CAN ID. 기능(NMT/SDO/PDO/EMCY)과 노드 ID가 함께 들어간다.
 
 **하트비트(heartbeat)**
 CANopen 노드가 `0x700+NodeID`로 보내는 생존 신호. 상태 바이트와 토글 비트가 들어 있다.
 
-**EMCY (Emergency)**
+**EMCY(Emergency)**
 CANopen 노드가 오류를 알리는 메시지. COB-ID는 `0x080+NodeID`다.
 
 **NMEA 2000**

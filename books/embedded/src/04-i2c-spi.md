@@ -16,7 +16,7 @@ UART가 "케이블 밖으로 나가는 통신"이라면, I2C와 SPI는 **보드 
 - OBD 값을 I2C OLED에 표시하는 실습, SPI-CAN 컨트롤러(MCP2515) 연결
 - 두 버스의 디버깅 체크리스트
 
-## 4.1 I2C (Inter-Integrated Circuit)
+## 4.1 I2C(Inter-Integrated Circuit)
 
 ### 배선과 전기
 
@@ -100,7 +100,7 @@ START | 0x76+W | ACK | reg | ACK | repeated START | 0x76+R | ACK | data | NACK |
 - 5V 장치와 3.3V 장치를 섞으면 레벨 시프터가 필요하다. 풀업을 어느 전압에 거는지가 버스 전압을 결정한다.
 - 긴 선, 여러 장치, 약한 풀업이 겹치면 파형이 둥글어져 통신이 간헐적으로 실패한다. 이때는 로직 분석기로 SDA/SCL을 본다. 12장에서 도구 사용법을 다룬다.
 
-## 4.2 SPI (Serial Peripheral Interface)
+## 4.2 SPI(Serial Peripheral Interface)
 
 ### 배선과 전기
 

@@ -54,7 +54,7 @@ Modbus RTU는 프레임 사이에 3.5문자 시간의 무음이 있으면 프레
 
 이 방식은 USB-UART 어댑터의 지연 타이머(Windows 기본 16ms 안팎)가 바이트를 뭉쳐 보내면 깨질 수 있다. Modbus RTU를 USB로 다룰 때는 어댑터와 드라이버의 지연 설정을 확인한다. "프로토콜은 맞는데 가끔 프레임이 합쳐진다"는 증상이 나오면 이 지연을 의심한다.
 
-### COBS (Consistent Overhead Byte Stuffing)
+### COBS(Consistent Overhead Byte Stuffing)
 
 - 페이로드에서 `0x00`을 없애고, 프레임 끝에 `0x00`을 붙여 경계로 쓴다.
 - 수신측은 `0x00`을 만나면 한 프레임을 완성한다.
@@ -82,7 +82,7 @@ A5        SOF (Start of Frame)
 C1 01     CRC-16/CCITT-FALSE (LEN + PAYLOAD에 대해 계산)
 ```
 
-CRC는 `LEN`과 `PAYLOAD` 전체, 즉 `03 01 2A 00`에 대해 계산한다. CRC-16/CCITT-FALSE(poly `0x1021`, init `0xFFFF`, 반사 없음, xorout `0x0000`)로 계산하면 `0xC101`이 나오고, 이를 빅엔디언으로 `C1 01`로 붙였다.
+CRC는 `LEN`과 `PAYLOAD` 전체, 즉 `03 01 2A 00`에 대해 계산한다. CRC-16/CCITT-FALSE(poly `0x1021`, init `0xFFFF`, 반사 없음, xorout `0x0000`)로 계산하면 `0xC101`이 나오고, 이를 빅 엔디언으로 `C1 01`로 붙였다.
 
 이 프레임을 `feed()`에 넣으면 payload `01 2A 00`이 나와야 한다. 바이트 하나씩 넣어도 결과는 같아야 한다. 이것이 이 장에서 만들 파서의 목표다.
 
@@ -149,7 +149,7 @@ OBD-II CAN 프레임도 같은 방식으로 읽는다. 다음은 엔진 회전�
 
 - `04`는 ISO-TP Single Frame의 PCI다. "데이터가 4바이트"라는 뜻이다.
 - `41`은 Mode 01 요청에 대한 긍정 응답이다. 요청 서비스 `01`에 `0x40`을 더한 값이다.
-- `0C`는 PID, `1A F8`은 빅엔디언 16비트 값이다.
+- `0C`는 PID, `1A F8`은 빅 엔디언 16비트 값이다.
 - 뒤의 `CC`는 패딩이다. 길이 필드가 4이므로 `CC CC CC`는 데이터가 아니다.
 
 **PCI를 데이터로 착각하면 `04`를 첫 번째 데이터 바이트로 읽는다.** 헤더를 켠 원시 로그에서는 PCI와 애플리케이션 데이터를 반드시 구분한다.

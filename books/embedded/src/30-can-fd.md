@@ -63,7 +63,7 @@ CAN FD는 두 가지를 바꾼다. **데이터 필드를 64바이트까지** 늘
 ```
 
 - **FDF(FD Format)**: recessive면 FD 프레임, dominant면 클래식 프레임이다. Bosch 1.0 문서에서는 EDL(Extended Data Length)라고 불렀고, ISO 11898-1:2015에서 FDF로 이름이 바뀌었다.
-- **res**: FD 프레임에서는 dominant로 보낸다. 클래식 프레임의 r0 자리와 같은 위치다.
+- **res**: FD 프레임에서는 dominant로 보낸다. 클래식 프레임의 r0 자리에는 FDF가 오고, res는 그 뒤에 새로 생긴 예약 비트다.
 - **BRS(Bit Rate Switch)**: recessive면 데이터 구간을 더 빠른 비트레이트로 전환한다. dominant면 프레임 전체를 중재 비트레이트로 보낸다.
 - **ESI(Error State Indicator)**: 송신 노드의 오류 상태를 알린다. dominant는 Error Active, recessive는 Error Passive다.
 - **DLC**: 4비트로 데이터 길이를 인코딩한다. 클래식과 달리 9~15가 실제 길이를 뜻한다.

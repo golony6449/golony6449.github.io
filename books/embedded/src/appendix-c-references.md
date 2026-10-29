@@ -152,3 +152,24 @@
 - esp-rs, "espup" — Xtensa Rust 포크·LLVM·GCC 링커 설치. <https://github.com/esp-rs/espup>
 - esp-rs, "esp-idf-hal" — ESP-IDF 드라이버를 감싼 std HAL, embedded-hal 0.2/1.0 trait. <https://github.com/esp-rs/esp-idf-hal>
 - esp-rs, "esp-idf-svc" — Wi-Fi·HTTP·MQTT·NVS·OTA 서비스 래퍼. <https://docs.rs/esp-idf-svc/>
+
+## C.11 차량 보안
+
+접속일은 2026-10-29이다. UN 규정·표준 원문은 무료 공개본과 유료 표준을 구분해 표기했다. 규정의 적용 일정은 국가·형식 승인별로 다르므로, 실제 판단에서는 해당 인증기관 문서를 확인한다.
+
+- UN Treaty Collection, "UN Regulation No. 155" — 2020-06-24 채택, 2021-01-22 발효, 등록번호 4789. <https://treaties.un.org/doc/Publication/MTDSG/Volume%20I/Chapter%20XI/XI-B-16-155.en.pdf>
+- UN Treaty Collection, "UN Regulation No. 156" — 2020-06-24 채택, 2021-01-22 발효. <https://treaties.un.org/doc/Publication/MTDSG/Volume%20I/Chapter%20XI/XI-B-16-156.en.pdf>
+- UNECE, "Three landmark UN vehicle regulations enter into force" — R155·R156·R157의 2021-01-22 발효. <https://unece.org/media/transport/Intelligent-Transport-Systems/press/352397>
+- UNECE, "UN Regulations on Cybersecurity and Software Updates to pave the way for mass roll out of connected vehicles" — R155·R156의 범위와 요구, EU 적용 일정(2022-07 신규 형식, 2024-07 모든 신차). <https://unece.org/sustainable-development/press/un-regulations-cybersecurity-and-software-updates-pave-way-mass-roll>
+- UK Vehicle Certification Agency, "Cyber Security and Software Updating" — R155·R156의 EU 적용일(2022-07-06 신규 형식, 2024-07-07 기존 형식), CSMS·SUMS 요구. <https://www.vehicle-certification-agency.gov.uk/connected-and-automated-vehicles/cyber-security-and-software-updating/>
+- ISO, "ISO/SAE 21434:2021 Road vehicles — Cybersecurity engineering" — 2021-08-31 공표, 개념·개발·생산·운영·유지·폐기 전 단계의 위험 관리, 특정 기술 비강제. <https://www.iso.org/standard/70918.html>
+- ISO, "ISO 14229-1:2020 Unified diagnostic services" — UDS 서비스와 0x29 Authentication(유료). <https://www.iso.org/standard/72439.html>
+- AUTOSAR, "Specification of Secure Onboard Communication Protocol" (R22-11) — SecOC의 Authenticator·Freshness Value·잘라 낸 MAC, Profile 1/2/3의 MAC·FV 길이, AES-128 CMAC. <https://www.autosar.org/fileadmin/standards/R22-11/FO/AUTOSAR_PRS_SecOcProtocol.pdf>
+- NHTSA, "Cybersecurity Best Practices for the Safety of Modern Vehicles" (2022 update) — 권고(비구속), 네트워크 분리·격리, 공유 버스의 메시지 인증·재전송 제한. <https://www.nhtsa.gov/sites/nhtsa.gov/files/2022-09/cybersecurity-best-practices-safety-modern-vehicles-2022-tag.pdf>
+- Federal Register, "Cybersecurity Best Practices for the Safety of Modern Vehicles" (87 FR 55459, 2022-09-09) — 최종 지침의 범위·T.11 메시지 인증·[G]/[T] 항목. <https://www.federalregister.gov/documents/2022/09/09/2022-19507/cybersecurity-best-practices-for-the-safety-of-modern-vehicles>
+- Charlie Miller·Chris Valasek, "Remote Exploitation of an Unaltered Passenger Vehicle" (Black Hat USA 2015) — 2014 Jeep Cherokee, Uconnect, 원격 경로, FCA 패치·140만 대 리콜·이동통신사 트래픽 차단. <http://illmatics.com/Remote%20Car%20Hacking.pdf>
+- BBC News, "Fiat Chrysler recalls 1.4 million cars after Jeep hack" (2015-07-24) — 리콜 규모, USB·딜러 방문 패치. <https://www.bbc.com/news/technology-33650491>
+- Kyong-Tak Cho·Kang G. Shin, "Fingerprinting Electronic Control Units for Vehicle Intrusion Detection" (USENIX Security '16) — CIDS, 주기 메시지 간격·클록 오차, RLS/CUSUM, 오탐률 0.055%, root-cause. <https://www.usenix.org/conference/usenixsecurity16/technical-sessions/presentation/cho>
+- Diadrom, "Securing the diagnostic channel: ISO 21434, UN R155 and UDS 0x29" — 0x27 시드-키의 한계, 0x29의 인증서·상호 인증·역할·폐기. <https://diadrom.com/insights/securing-the-diagnostic-channel/>
+- IETF RFC 2104, "HMAC: Keyed-Hashing for Message Authentication" — HMAC 구성. <https://www.rfc-editor.org/rfc/rfc2104>
+- IETF RFC 8446, "The Transport Layer Security (TLS) Protocol Version 1.3" — TLS 1.3의 인증·기밀성·무결성. <https://www.rfc-editor.org/rfc/rfc8446>

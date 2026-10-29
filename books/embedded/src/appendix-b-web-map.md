@@ -192,7 +192,7 @@
 | 에러 응답 | NRC | NRC | DM1(SPN/FMI) | Abort/EMCY | PGN·제조사 정의 |
 | 헬스 체크 | - | TesterPresent(0x3E) | 주기 PGN | 하트비트(0x700+ID) | 주기 PGN |
 | 인증 | - | 0x27/0x29 | - | - | NMEA 인증(장비) |
-| 관련 장 | 7 | 8 | 24 | 25 | 28 |
+| 관련 장 | 9 | 10 | 27 | 28 | 28 |
 
 한 문장으로 줄이면 이렇다. **OBD-II는 공개 진단 REST, UDS는 사내 RPC, J1939는 상용차 pub/sub, CANopen은 객체 사전 기반 REST+이벤트, NMEA 2000은 선박용 표준 pub/sub**이다. 비유는 입구일 뿐이고, 주소 클레임·PGN 사전·NMT 상태처럼 비유가 깨지는 지점을 각 장에서 확인한다.
 

@@ -113,7 +113,7 @@ rate = (x[n] - x[n-1]) / (t[n] - t[n-1])
 | 계층 | 없음의 표현 | 주의 |
 |---|---|---|
 | JSON | `null` | `0`과 구분된다. 필드 자체를 빼면 "없음"과 "모름"이 섞인다 |
-| JavaScript/TypeScript | `null`, `undefined` | `number \| null` 타입, `0`과 비교하지 않기 |
+| JavaScript/TypeScript | `null`, `undefined` | `number` 또는 `null` 타입, `0`과 비교하지 않기 |
 | Python | `None` | `float('nan')`은 전파·비교 함정 |
 | SQLite/SQL | `NULL` | `NULL = NULL`은 참이 아님, `IS NULL` 사용 |
 | InfluxDB | 필드 없음 | 결측과 0 구분, 태그로 품질 표시 가능 |

@@ -160,7 +160,8 @@
 - UN Treaty Collection, "UN Regulation No. 155" — 2020-06-24 채택, 2021-01-22 발효, 등록번호 4789. <https://treaties.un.org/doc/Publication/MTDSG/Volume%20I/Chapter%20XI/XI-B-16-155.en.pdf>
 - UN Treaty Collection, "UN Regulation No. 156" — 2020-06-24 채택, 2021-01-22 발효. <https://treaties.un.org/doc/Publication/MTDSG/Volume%20I/Chapter%20XI/XI-B-16-156.en.pdf>
 - UNECE, "Three landmark UN vehicle regulations enter into force" — R155·R156·R157의 2021-01-22 발효. <https://unece.org/media/transport/Intelligent-Transport-Systems/press/352397>
-- UNECE, "UN Regulations on Cybersecurity and Software Updates to pave the way for mass roll out of connected vehicles" — R155·R156의 범위와 요구, EU 적용 일정(2022-07 신규 형식, 2024-07 모든 신차). <https://unece.org/sustainable-development/press/un-regulations-cybersecurity-and-software-updates-pave-way-mass-roll>
+- UNECE, "UN Regulations on Cybersecurity and Software Updates to pave the way for mass roll out of connected vehicles" — R155·R156의 도입 배경·요구, EU 적용 일정(2020년 원문 기준 범위). R155의 범위는 2025년 Supplement 3에서 L 범주까지 확대되었다(아래 EUR-Lex). <https://unece.org/sustainable-development/press/un-regulations-cybersecurity-and-software-updates-pave-way-mass-roll>
+- EUR-Lex, "UN Regulation No. 155 (2025/5)" — Supplement 3, 2025-01-10 발효, 적용 범위 L·M·N·O(ECU 1개 이상). <https://eur-lex.europa.eu/eli/reg/2025/5/oj>
 - UK Vehicle Certification Agency, "Cyber Security and Software Updating" — R155·R156의 EU 적용일(2022-07-06 신규 형식, 2024-07-07 기존 형식), CSMS·SUMS 요구. <https://www.vehicle-certification-agency.gov.uk/connected-and-automated-vehicles/cyber-security-and-software-updating/>
 - ISO, "ISO/SAE 21434:2021 Road vehicles — Cybersecurity engineering" — 2021-08-31 공표, 개념·개발·생산·운영·유지·폐기 전 단계의 위험 관리, 특정 기술 비강제. <https://www.iso.org/standard/70918.html>
 - ISO, "ISO 14229-1:2020 Unified diagnostic services" — UDS 서비스와 0x29 Authentication(유료). <https://www.iso.org/standard/72439.html>

@@ -1,8 +1,8 @@
-# 16장 임베디드 Rust 맛보기
+# 19장 임베디드 Rust 맛보기
 
 ## 이 장에서
 
-14장과 15장은 C로 메모리와 태스크를 다뤘다. 이 장은 같은 문제를 **Rust**로 접근했을 때 무엇이 달라지는지 맛만 본다. Rust 문법 전체를 가르치는 장이 아니다. 웹 개발자가 이미 아는 `async/await`, 모듈, 패키지 관리자에 Rust의 소유권(ownership)을 더했을 때, 펌웨어의 메모리 오류가 어디까지 컴파일 시점에 걸러지는지 확인하는 것이 목적이다.
+17장과 18장은 C로 메모리와 태스크를 다뤘다. 이 장은 같은 문제를 **Rust**로 접근했을 때 무엇이 달라지는지 맛만 본다. Rust 문법 전체를 가르치는 장이 아니다. 웹 개발자가 이미 아는 `async/await`, 모듈, 패키지 관리자에 Rust의 소유권(ownership)을 더했을 때, 펌웨어의 메모리 오류가 어디까지 컴파일 시점에 걸러지는지 확인하는 것이 목적이다.
 
 이 장의 Rust 코드는 **호스트(PC)에서 실제로 컴파일·실행해 확인했다.** ESP32 타깃으로 빌드하거나 실물에서 실행한 것은 아니며, 그 부분은 `실물 확인 필요`로 표시한다. 사용한 도구는 Rust 1.99.1(2026-10-13), `embedded-hal` 1.0.0, `embassy-executor` 0.10.0이다.
 
@@ -16,7 +16,7 @@
 - C/C++/Arduino와 Rust를 고르는 기준
 - OBD 파서와 SPSC 링 버퍼를 Rust로 옮겨 보기
 
-## 16.1 소유권이 메모리 문제를 막는 방식
+## 19.1 소유권이 메모리 문제를 막는 방식
 
 Rust의 소유권 규칙은 세 문장이다.
 
@@ -113,7 +113,7 @@ fn main() {
 
 MCU에서 GC pause는 실시간 마감을 깨뜨릴 수 있다. Rust는 GC가 없으므로 그 문제가 없지만, 대신 **drop이 언제 일어나는지**를 개발자가 이해해야 한다. 큰 객체를 스택에 두면 Rust도 스택 오버플로가 난다. 소유권은 "모든 메모리 문제"를 막는 마법이 아니다. 논리 오류, 데드락, 스택 오버플로, `unsafe` 코드의 실수는 여전히 남는다.
 
-## 16.2 `no_std`와 패닉
+## 19.2 `no_std`와 패닉
 
 임베디드 Rust는 보통 `#![no_std]`로 시작한다. `std`는 OS·파일 시스템·힙 할당자를 전제로 하기 때문이다. 대신 `core`(언어 기본 기능)와 필요하면 `alloc`(힙 할당)을 쓴다.
 
@@ -131,12 +131,12 @@ fn panic(_info: &PanicInfo) -> ! {
 
 - `#[panic_handler]`는 `no_std` 프로그램에 정확히 하나 필요하다. 패닉 시 동작(중단, 무한 루프, 로그)을 직접 정한다.
 - `panic-halt`는 무한 루프, `panic-abort`는 abort 명령을 실행한다. `panic-semihosting`은 호스트 콘솔에 메시지를 보낸다. 어느 것을 쓰든 **패닉이 나면 펌웨어가 멈추거나 재시작한다**는 사실은 같다.
-- `no_std`에는 `Vec`, `String`, `HashMap`이 없다. `alloc` crate를 쓰면 쓸 수 있지만, 할당 실패를 처리해야 한다(14.2절).
+- `no_std`에는 `Vec`, `String`, `HashMap`이 없다. `alloc` crate를 쓰면 쓸 수 있지만, 할당 실패를 처리해야 한다(17.2절).
 - 하드웨어 레지스터는 `unsafe`로 접근한다. PAC(Peripheral Access Crate)가 생성한 `read`/`write`/`modify` API를 쓰며, 잘못된 비트 값을 넣으면 안 된다. `embedded-hal`은 이 `unsafe`를 trait 뒤에 숨기는 계층이다.
 
 Rust의 `Result<T, E>`는 C의 오류 코드와 비슷하지만, `#[must_use]`와 `?` 연산자로 무시하기 어렵게 만든다. ESP32에서는 패닉을 리셋으로 연결하는 경우가 많다. 패닉 메시지를 UART에 남기려면 패닉 핸들러에서 로그를 출력하거나, `esp-backtrace` 같은 크레이트를 쓴다(버전·칩 지원 확인 필요).
 
-## 16.3 `embedded-hal`: 하드웨어를 trait 뒤로
+## 19.3 `embedded-hal`: 하드웨어를 trait 뒤로
 
 `embedded-hal`은 MCU에 독립적인 HAL(Hardware Abstraction Layer) trait 모음이다. 1.0.0은 **2024-01-09에 릴리스**되었다. 주요 모듈은 `digital`, `i2c`, `spi`, `pwm`, `delay`다. 이 crate에는 serial trait이 없고, 시리얼은 `embedded-io`로 분리되어 있다.
 
@@ -184,7 +184,7 @@ where
 
 `embedded-hal` 1.0.0은 blocking trait이 중심이고, async 버전은 `embedded-hal-async`에 있다. 드라이버를 둘 다 지원하려면 trait을 따로 구현하거나, blocking 구현을 async로 감싼다.
 
-## 16.4 Embassy: async 실행기
+## 19.4 Embassy: async 실행기
 
 Embassy는 임베디드용 async 실행기다. JavaScript의 이벤트 루프와 비슷하게, 실행할 준비가 된 Future를 poll하고, 준비된 것이 없으면 CPU를 재운다. 차이는 **힙 없이 정적 저장소를 쓴다**는 점이다. Embassy 문서는 "No alloc, no heap needed. Tasks are statically allocated."라고 설명한다.
 
@@ -241,7 +241,7 @@ Embassy에서 **블로킹 호출이나 긴 계산을 하면 다른 태스크가 
 
 ESP32에서 Embassy를 쓰려면 `esp-hal`의 async 주변장치와 `esp-hal-embassy` 실행기를 조합한다. 구체적인 API는 esp-hal 버전마다 다르므로, 이 장에서는 코드를 실물 확인 대상으로 남긴다.
 
-## 16.5 ESP32 Rust 현황 (2026-10-29 확인)
+## 19.5 ESP32 Rust 현황 (2026-10-29 확인)
 
 Rust on ESP 생태계는 두 갈래다.
 
@@ -278,7 +278,7 @@ espup install
 - Wi-Fi/TLS/HTTP까지 한 번에 하려면 `esp-idf-svc`가 성숙하다. 대신 ESP-IDF 버전·툴체인·빌드 시간이 C와 비슷하게 무거워진다.
 - CAN(TWAI) 예제는 esp-hal 저장소의 예제와 버전을 맞춰 확인한다. 이 책의 C 예제를 그대로 Rust로 옮길 수는 없다.
 
-## 16.6 C/C++/Arduino와 Rust 중 무엇을 고를까
+## 19.6 C/C++/Arduino와 Rust 중 무엇을 고를까
 
 | 기준 | C/C++/Arduino | Rust |
 |---|---|---|
@@ -293,11 +293,11 @@ espup install
 
 이 책은 C를 먼저 가르친다. 임베디드의 제약(메모리, 인터럽트, 전원)을 C로 익히면 Rust의 추상화가 무엇을 감추는지 보인다. Rust는 "C를 몰라도 되는 언어"가 아니다. 오히려 소유권을 이해하려면 스택·힙·포인터를 알아야 한다.
 
-## 16.7 OBD 파서와 링 버퍼를 Rust로
+## 19.7 OBD 파서와 링 버퍼를 Rust로
 
 ### 파서
 
-C 버전(14장)과 같은 ISO-TP Single Frame 파서를 Rust로 옮기면, 길이·PID 검사를 `enum` 오류로 명시할 수 있다.
+C 버전(17장)과 같은 ISO-TP Single Frame 파서를 Rust로 옮기면, 길이·PID 검사를 `enum` 오류로 명시할 수 있다.
 
 ```rust
 #[derive(Debug, PartialEq, Eq)]

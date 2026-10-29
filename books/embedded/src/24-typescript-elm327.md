@@ -1,10 +1,10 @@
-# 21장 TypeScript로 CAN과 ELM327 다루기
+# 24장 TypeScript로 CAN과 ELM327 다루기
 
 ## 이 장에서
 
-7장에서는 파이썬으로 ELM327을 열고 PID를 읽었다. 이 책의 독자는 대부분 TypeScript와 Node.js가 주력이다. 같은 일을 **익숙한 언어와 도구**로 다시 해 보면, 프로토콜 이해가 언어 지식에 가려지지 않고 드러난다. 파이썬의 스레드·`pyserial` 대신 Node의 이벤트 루프·`serialport`를 쓰고, `dataclass` 대신 `interface`와 판별 유니온으로 응답을 모델링한다.
+9장에서는 파이썬으로 ELM327을 열고 PID를 읽었다. 이 책의 독자는 대부분 TypeScript와 Node.js가 주력이다. 같은 일을 **익숙한 언어와 도구**로 다시 해 보면, 프로토콜 이해가 언어 지식에 가려지지 않고 드러난다. 파이썬의 스레드·`pyserial` 대신 Node의 이벤트 루프·`serialport`를 쓰고, `dataclass` 대신 `interface`와 판별 유니온으로 응답을 모델링한다.
 
-이 작업은 웹에서 REST 클라이언트를 다른 언어로 다시 쓰는 일과 비슷하다. 프로토콜은 그대로이고, 타입과 비동기 모델만 바뀐다. 그래서 7장의 파이썬 동작을 줄 단위로 비교하며 진행한다.
+이 작업은 웹에서 REST 클라이언트를 다른 언어로 다시 쓰는 일과 비슷하다. 프로토콜은 그대로이고, 타입과 비동기 모델만 바뀐다. 그래서 9장의 파이썬 동작을 줄 단위로 비교하며 진행한다.
 
 이 장에서 만드는 것은 라이브러리가 아니라 **계층이 분명한 작은 클라이언트**다.
 
@@ -28,17 +28,17 @@
 - ELM327의 CR·에코·`>` 프롬프트를 처리하는 클라이언트
 - `NO DATA`, `SEARCHING...`, `7F xx 78`을 구분하는 응답 분류
 - 여러 PID를 한 요청에 묶고, 응답 순서와 무관하게 파싱하기
-- 7장 파이썬 코드와의 줄 단위 비교
+- 9장 파이썬 코드와의 줄 단위 비교
 - ELM327의 응답 시간·처리량과 `ATST`·`ATAT` 설정
 - Linux SocketCAN을 Node에서 쓰는 `socketcan` 패키지
 
-**안전 원칙은 7장과 같다.** 실제 차량에서는 정차 상태에서 읽기만 한다. 이 장의 코드는 `AT` 명령과 Mode 01 PID 읽기만 보낸다. 프레임 송신은 17장의 vcan이나 가상 ECU에서만 한다.
+**안전 원칙은 9장과 같다.** 실제 차량에서는 정차 상태에서 읽기만 한다. 이 장의 코드는 `AT` 명령과 Mode 01 PID 읽기만 보낸다. 프레임 송신은 20장의 vcan이나 가상 ECU에서만 한다.
 
-## 21.1 왜 TypeScript인가
+## 24.1 왜 TypeScript인가
 
 파이썬과 TypeScript는 같은 프로토콜을 다루지만, 코드의 모양이 다르다.
 
-| 7장 파이썬 | 이 장 TypeScript | 차이 |
+| 9장 파이썬 | 이 장 TypeScript | 차이 |
 |---|---|---|
 | `pyserial`의 `Serial` | `serialport`의 `SerialPort` | 둘 다 OS 시리얼 포트를 연다 |
 | `serial.Serial(...).read(1)` | `port.on("data", ...)` | 파이썬은 읽기 루프, Node는 이벤트 |
@@ -46,7 +46,7 @@
 | `@dataclass` | `interface`, `type` | 타입은 런타임에 지워진다 |
 | `python-can` SocketCAN | `socketcan` npm 패키지 | Linux 전용이라는 점은 같다 |
 | `uv add` | `npm install` | 잠금 파일·스크립트가 다르다 |
-| Flask | `node:http`(22장) | 둘 다 HTTP 서버를 만든다 |
+| Flask | `node:http`(25장) | 둘 다 HTTP 서버를 만든다 |
 
 TypeScript의 장점은 **경계에서 타입을 강제할 수 있다**는 것이다. 시리얼에서 오는 것은 `Buffer`이고, 그 안의 의미는 우리가 해석한다. `string`이라고 단정하지 않고 `Buffer` → 줄 → `ElmResponse` → `PidValues`로 한 단계씩 좁히면, "응답이 이상하다"는 문제를 어느 계층에서 찾을지가 분명해진다.
 
@@ -61,7 +61,7 @@ Node 24.12부터 TypeScript의 **타입 제거(type stripping)** 가 안정 상�
 - 그래서 `tsconfig.json`에 `erasableSyntaxOnly`를 켜 두면 "Node가 실행할 수 없는 문법"을 컴파일 단계에서 걸러 준다.
 - Node 22는 22.18.0부터 타입 제거가 기본으로 켜져 있어 `.ts`를 바로 실행할 수 있다(실험 기능 경고가 뜬다). 그보다 낮은 22나 Node 20이라면 `tsx` 같은 로더를 쓰거나 `tsc`로 JavaScript를 만들어 실행한다. `serialport` 13은 Node 20 이상을 요구한다.
 
-## 21.2 프로젝트 준비
+## 24.2 프로젝트 준비
 
 ```bash
 mkdir obd-ts
@@ -122,7 +122,7 @@ obd-ts/
     cli.ts
 ```
 
-## 21.3 전송 계층: 시리얼과 TCP를 같은 인터페이스로
+## 24.3 전송 계층: 시리얼과 TCP를 같은 인터페이스로
 
 ELM327과 대화하는 방법은 하나가 아니다. 실제 차량에서는 USB 시리얼, 차 없이 연습할 때는 ELM327-emulator의 TCP 서버를 쓴다. 둘을 갈아 끼울 수 있게 **바이트 통로**를 인터페이스로 분리한다.
 
@@ -252,7 +252,7 @@ export class TcpTransport implements Transport {
 - `TcpTransport`는 ELM327-emulator를 위한 것이다. 실제 차량에 TCP로 붙는 것이 아니다. Windows에서 ELM327-emulator의 TCP 모드(`-n`)는 com0com 같은 가상 시리얼 드라이버가 필요 없다.
 - 세 번째 `createPort` 인자는 테스트용이다. `SerialPortMock`을 넣어 실제 포트 없이 같은 코드 경로를 시험할 수 있다.
 
-## 21.4 ELM327 클라이언트: CR, 에코, 프롬프트
+## 24.4 ELM327 클라이언트: CR, 에코, 프롬프트
 
 ELM327의 대화 규칙은 단순하다.
 
@@ -467,7 +467,7 @@ export async function initializeElm(client: Elm327Client): Promise<{ protocol: s
 
 ELM327은 요청과 응답이 한 줄로 오가는 반이중 장치다. `ATSP0`가 프로토콜을 찾는 동안 `010C`를 보내면, 나중에 도착한 `41 00 ...`이 `010C`의 응답으로 오해된다. 실제로 ELM327-emulator에서도 첫 `0100`이 `SEARCHING...`으로 늦게 끝나는 동안 다음 명령을 보내면 응답이 섞인다.
 
-`command()`는 `tail` 체인으로 명령을 직렬화한다. 호출자는 `await`로 기다리면 되고, 내부에서는 **앞 명령의 프롬프트가 온 뒤에만** 다음 명령을 쓴다. 큐가 무한정 길어지지 않게, 수집기는 한 번에 한 요청만 보낸다(22장).
+`command()`는 `tail` 체인으로 명령을 직렬화한다. 호출자는 `await`로 기다리면 되고, 내부에서는 **앞 명령의 프롬프트가 온 뒤에만** 다음 명령을 쓴다. 큐가 무한정 길어지지 않게, 수집기는 한 번에 한 요청만 보낸다(25장).
 
 ### 응답 분류
 
@@ -489,11 +489,11 @@ ELM327은 요청과 응답이 한 줄로 오가는 반이중 장치다. `ATSP0`�
 
 ### 타임아웃이 나면 연결을 끊는 이유
 
-호스트 타임아웃이 나면 응답이 늦게 도착할 수 있다. 그 상태로 다음 명령을 보내면 **늦은 응답이 다음 명령의 응답으로 섞인다.** ELM327에는 "이 명령의 응답만 달라"는 요청 ID가 없으므로, 호스트가 스스로 구분할 방법이 없다. 가장 안전한 복구는 연결을 닫고 다시 여는 것이다. 이 책의 `execute()`는 타임아웃 시 `transport.close()`를 호출하고, 22장의 세션 루프가 백오프 후 재연결한다.
+호스트 타임아웃이 나면 응답이 늦게 도착할 수 있다. 그 상태로 다음 명령을 보내면 **늦은 응답이 다음 명령의 응답으로 섞인다.** ELM327에는 "이 명령의 응답만 달라"는 요청 ID가 없으므로, 호스트가 스스로 구분할 방법이 없다. 가장 안전한 복구는 연결을 닫고 다시 여는 것이다. 이 책의 `execute()`는 타임아웃 시 `transport.close()`를 호출하고, 25장의 세션 루프가 백오프 후 재연결한다.
 
 `ReadlineParser`를 쓰지 않는 이유도 같다. `ReadlineParser`는 `\n` 기준으로 줄을 나누지만, ELM327은 `\r`을 쓰고 프롬프트 `>`는 줄바꿈 없이 올 수도 있다. `DelimiterParser`에 `\r`을 넣어도 `>`를 별도로 처리해야 한다. 이 장은 버퍼와 프롬프트를 직접 다룬다.
 
-## 21.5 PID 파싱: 표와 판별 유니온
+## 24.5 PID 파싱: 표와 판별 유니온
 
 PID 응답은 `41 <PID> <데이터...>`다. PID마다 데이터 길이와 공식이 다르므로, **PID 번호로 길이와 디코더를 찾는 표**가 필요하다.
 
@@ -763,7 +763,7 @@ async function openTransport(): Promise<Transport> {
 }
 ```
 
-차 없이 실행하려면 ELM327-emulator를 TCP 모드로 띄운다(17장).
+차 없이 실행하려면 ELM327-emulator를 TCP 모드로 띄운다(20장).
 
 ```bash
 # 터미널 1
@@ -782,14 +782,14 @@ supported: 01 03 04 05 06 07 0B 0C 0D 0E 0F 10 11 13 15 1C 1F 20
 rpm=1304rpm  speed=10km/h  coolant=55°C  throttle=16.9%  fuel=66.7%  voltage=14.67V
 ```
 
-- `protocol=A6`는 `ATDPN`의 응답이다. ISO 15765-4 CAN 11비트 500k를 뜻한다(7장).
+- `protocol=A6`는 `ATDPN`의 응답이다. ISO 15765-4 CAN 11비트 500k를 뜻한다(9장).
 - 지원 PID 목록은 emulator의 `scenario car` 값이다. 실제 차량과 다르다.
 - `rpm=1304rpm`처럼 단위가 붙어 읽기 어렵다면 출력 형식만 고치면 된다. 값 자체는 `parseMode01`이 숫자로 돌려준다.
 - 실제 차량에서는 `--mode serial --port COM5`로 실행한다. 보율이 9600이면 `--baud 9600`을 준다.
 
-## 21.6 7장 파이썬 코드와 나란히
+## 24.6 9장 파이썬 코드와 나란히
 
-7장의 파이썬 `Elm327.command()`는 바이트를 1개씩 읽어 `>`를 찾는다.
+9장의 파이썬 `Elm327.command()`는 바이트를 1개씩 읽어 `>`를 찾는다.
 
 ```python
 buf = bytearray()
@@ -805,7 +805,7 @@ while time.monotonic() < deadline:
 
 TypeScript는 `data` 이벤트로 청크를 받아 버퍼에 쌓고, `\r`과 `>`를 찾는다. **같은 상태 기계**를 이벤트 기반으로 옮긴 것이다.
 
-| 관심사 | 7장 파이썬 | 21장 TypeScript |
+| 관심사 | 9장 파이썬 | 24장 TypeScript |
 |---|---|---|
 | 포트 열기 | `serial.Serial(port, baud, timeout=0.1)` | `new SerialPort({ path, baudRate, autoOpen: false })` + `open()` |
 | 읽기 | `read(1)` 루프 | `data` 이벤트 + 문자열 버퍼 |
@@ -815,11 +815,11 @@ TypeScript는 `data` 이벤트로 청크를 받아 버퍼에 쌓고, `\r`과 `>`
 | PID 공식 | `if pid == ...` 연쇄 | `PIDS` 표 + `bytes` 길이 |
 | 다중 PID | `query_pid`가 한 PID씩 | `parseMode01`이 연속 파싱 |
 | 동시성 | `threading.Thread` | `async` 루프 + 이벤트 루프 |
-| 대시보드 | Flask + `jsonify` | `node:http` + SSE(22장) |
+| 대시보드 | Flask + `jsonify` | `node:http` + SSE(25장) |
 
-파이썬 쪽이 더 읽기 쉬운 부분도 있다. `read(1)` 루프는 "프롬프트까지 읽는다"는 의도가 코드에 그대로 보인다. TypeScript 쪽은 이벤트와 버퍼 상태가 나뉘어 있어, 처음에는 `pending`과 `buffer`의 역할을 이해해야 한다. 대신 Node에서는 느린 시리얼 읽기가 다른 요청을 막지 않는다. Flask + 스레드와 Node + 이벤트 루프의 차이는 22장에서 다시 본다.
+파이썬 쪽이 더 읽기 쉬운 부분도 있다. `read(1)` 루프는 "프롬프트까지 읽는다"는 의도가 코드에 그대로 보인다. TypeScript 쪽은 이벤트와 버퍼 상태가 나뉘어 있어, 처음에는 `pending`과 `buffer`의 역할을 이해해야 한다. 대신 Node에서는 느린 시리얼 읽기가 다른 요청을 막지 않는다. Flask + 스레드와 Node + 이벤트 루프의 차이는 25장에서 다시 본다.
 
-## 21.7 응답 시간과 처리량
+## 24.7 응답 시간과 처리량
 
 ELM327의 속도는 차량 ECU의 응답 시간과 어댑터의 타임아웃에 의해 결정된다. 데이터시트의 숫자를 먼저 보자.
 
@@ -854,7 +854,7 @@ ELM327은 요청을 보낸 뒤 최대 `AT ST`만큼 기다리고, **응답을 �
 
 ### 여러 PID를 한 요청에
 
-CAN(ISO 15765-4)에서는 한 요청에 **최대 6개 PID**를 넣을 수 있다. 응답은 한 메시지에 모여 오고, 순서는 요청과 다를 수 있다(데이터시트 p.45). 7장의 쏘렌토 실차 기록에서도 6개 PID, 7개 항목을 한 요청으로 묶어 0.09~0.11초 주기로 읽었다.
+CAN(ISO 15765-4)에서는 한 요청에 **최대 6개 PID**를 넣을 수 있다. 응답은 한 메시지에 모여 오고, 순서는 요청과 다를 수 있다(데이터시트 p.45). 9장의 쏘렌토 실차 기록에서도 6개 PID, 7개 항목을 한 요청으로 묶어 0.09~0.11초 주기로 읽었다.
 
 ```text
 >01 0C 0D 05 11 2F 42
@@ -896,9 +896,9 @@ console.log(`${elapsed.toFixed(1)}ms`, response.kind);
 - 100ms 이하를 목표로 `AT ST`를 낮추면, 느린 ECU나 응답 대기(`7F xx 78`)에서 실패가 늘어난다. 먼저 기본값으로 안정성을 확인하고, 필요할 때만 줄인다.
 - 수집 주기를 1초로 두면 200ms 꼬리가 있어도 충분하다. 10Hz가 필요하면 다중 PID, 응답 수 digit, `AT ST` 조정을 함께 검토한다.
 
-## 21.8 Node.js에서 SocketCAN
+## 24.8 Node.js에서 SocketCAN
 
-Linux에서는 ELM327 없이 CAN 프레임을 직접 다룰 수 있다. 17장에서 만든 `vcan0`을 Node에서 쓰려면 `socketcan` 패키지를 쓴다.
+Linux에서는 ELM327 없이 CAN 프레임을 직접 다룰 수 있다. 20장에서 만든 `vcan0`을 Node에서 쓰려면 `socketcan` 패키지를 쓴다.
 
 ```bash
 sudo modprobe vcan
@@ -939,8 +939,8 @@ channel.stop();
 - `createRawChannel("vcan0", true)`의 두 번째 인자는 타임스탬프 생성 여부다.
 - `onMessage`의 `frame.data`는 `Buffer`다. `id`는 숫자, `ext`는 29비트 여부다.
 - `channel.send()`는 CAN 프레임을 실제로 보낸다. **vcan이나 책상 위 시험 버스에서만** 호출한다. 실제 차량 버스에 임의 프레임을 보내면 ECU 동작에 영향을 줄 수 있다.
-- vcan은 ECU를 흉내 내지 않는다. `7DF` 요청을 보내도 응답이 없다. 응답이 필요하면 17장의 가짜 ECU를 같은 vcan에 붙인다.
-- `socketcan`은 Linux 전용이다. Windows에는 SocketCAN이 없으므로 ELM327 시리얼/TCP, 제조사 USB-CAN SDK, WSL2 중 하나를 고른다. WSL2의 vcan 지원은 커널에 따라 다르다(17장).
+- vcan은 ECU를 흉내 내지 않는다. `7DF` 요청을 보내도 응답이 없다. 응답이 필요하면 20장의 가짜 ECU를 같은 vcan에 붙인다.
+- `socketcan`은 Linux 전용이다. Windows에는 SocketCAN이 없으므로 ELM327 시리얼/TCP, 제조사 USB-CAN SDK, WSL2 중 하나를 고른다. WSL2의 vcan 지원은 커널에 따라 다르다(20장).
 
 ### 유지보수 상태
 
@@ -956,7 +956,7 @@ channel.stop();
 | `bus.shutdown()` | `channel.stop()` |
 | `can.Message`의 `arbitration_id`, `is_extended_id` | `frame.id`, `frame.ext` |
 
-## 21.9 흔한 실수
+## 24.9 흔한 실수
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
@@ -973,7 +973,7 @@ channel.stop();
 | Node가 `.ts`를 실행하지 못한다 | Node 22.18.0 미만 | Node 업그레이드 또는 `tsx` |
 | socketcan이 로드되지 않는다 | Windows, vcan 미생성 | Linux/WSL2, `ip link` 확인 |
 
-## 21.10 체크리스트
+## 24.10 체크리스트
 
 - [ ] Node 24.12 이상(또는 `tsx`)과 `serialport` 13을 설치했는가
 - [ ] `npm run typecheck`가 통과하는가
@@ -997,7 +997,7 @@ channel.stop();
 - `NO DATA`는 정상적인 빈 응답, `SEARCHING...`은 진행 표시, `7F xx 78`은 응답 대기다.
 - 호스트 타임아웃 뒤에는 늦은 응답이 다음 명령과 섞이므로 연결을 닫고 재연결한다.
 - PID는 `PIDS` 표의 `pid`·`bytes`·`decode`로 파싱한다. 응답 순서를 가정하지 않는다.
-- 한 요청에 PID 6개까지 넣을 수 있다. 7장의 쏘렌토 기록에서 7항목 0.09~0.11초 주기를 확인했다.
+- 한 요청에 PID 6개까지 넣을 수 있다. 9장의 쏘렌토 기록에서 7항목 0.09~0.11초 주기를 확인했다.
 - `AT ST`는 4ms 단위의 16진수다. 기본 `32`(0x32=50)는 약 200ms다. `AT AT1` 적응형 타이밍이 기본·권장이다.
 - 응답 뒤에도 같은 타임아웃만큼 추가 응답을 기다린다. 응답 수 digit은 그 꼬리를 없앨 수 있지만, 응답 수를 확실히 알 때만 쓴다.
 - `socketcan`은 Linux 전용이며 vcan에서 시험한다. 실제 차량 버스에는 임의 프레임을 보내지 않는다.

@@ -1,6 +1,6 @@
 # 부록 C. 참고 자료
 
-이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-28~29이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
+이 책을 쓰면서 확인한 자료를 정리한다. 접속일은 2026-10-28~30이다. 표준 원문(SAE J1979, ISO 15765-2, ISO 14229 등)은 유료이므로, 이 책은 공개된 2차 자료와 필자의 실차 기록을 함께 사용했다. 2차 자료의 해석이 표준 원문과 다를 수 있으므로, 실제 구현에서는 해당 표준을 확인한다.
 
 ## C.1 OBD-II와 차량 진단
 
@@ -79,6 +79,8 @@
 - ISO 15765-4 — Requirements for emissions-related systems.
 - ISO 14229-1 — Unified diagnostic services, application layer.
 - ISO 11898-1/-2 — CAN data link layer / high-speed physical layer.
+- ISO 7637-2 — Road vehicles — Electrical disturbances from conduction and coupling(유료). 차량 전원선 과도 전압 시험.
+- ISO 16750-2 — Road vehicles — Environmental conditions and testing for electrical and electronic equipment — Electrical loads(유료). load dump·점프스타트·역극성·콜드 크랭크.
 
 표준의 조항 번호·최신 개정판은 구입 시점에 확인한다. 이 책의 `확인 필요` 표시는 표준 원문이나 제조사 문서로 확정하지 못한 값에 남아 있다.
 
@@ -129,7 +131,7 @@
 
 ## C.10 펌웨어·FreeRTOS·Rust
 
-접속일은 2026-10-29이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)과 v5.4를 함께 확인했다. 이 책의 13·15장 코드는 v5.x의 legacy TWAI API를 기준으로 한다.
+접속일은 2026-10-29이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)과 v5.4를 함께 확인했다. 이 책의 16·18장 코드는 v5.x의 legacy TWAI API를 기준으로 한다.
 
 - Espressif, "ESP-IDF v5.4 TWAI" — legacy `driver/twai.h` API, 드라이버 상태, RX 큐, 경보 플래그, `twai_initiate_recovery()`, 상태 정보. <https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/peripherals/twai.html>
 - Espressif, "ESP-IDF TWAI (stable)" — v6.x의 `twai_node_*` API, 콜백 기반 수신, `twai_node_recover()`, 버스오프 복구. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/twai.html>
@@ -205,3 +207,25 @@
 - UNECE, "Summary UNR154 LDV OBFCM technical exploration" — PEV 배터리 PID 0x5B/0x9A/0xB2/0xB7 정의와 규제 논의. <https://wiki.unece.org/download/attachments/265978082/Summary%20UNR154%20LDV%20OBFCM%20technical%20exploration%20-%20WLTP%20Ad-hoc.pdf>
 - California Air Resources Board, "§ 1962.5 Data Standardization Requirements for 2026 and Subsequent Model Year Light-Duty Zero Emission Vehicles" — ZEV 배터리 데이터 표준화와 J1979-2/J1979-DA 참조. <https://ww2.arb.ca.gov/sites/default/files/2021-12/draft%20ZEV%20standardized%20data%201962.5.pdf>
 - ISO, "ISO 11783" — 농림업 트랙터·기계의 CAN 기반 네트워크(유료). NMEA 2000·J1939 데이터링크의 참조 표준.
+
+## C.13 전기·GPIO·ADC·PWM·차량 전원
+
+접속일은 2026-10-30이다. ESP-IDF 문서는 stable(작성 시점 v6.x 계열)과 v5.x를 함께 확인했다. 5장의 ESP-IDF 코드는 `gpio`, `adc_oneshot`, `ledc`의 v5.x API를 기준으로 하며, 실물에서 컴파일·실행하지 못한 항목은 `실물 확인 필요`로 표시했다.
+
+- Espressif, "ESP-IDF GPIO & RTC GPIO" — `gpio_config()`, `gpio_set_pull_mode()`, `gpio_install_isr_service()`, `gpio_isr_handler_add()`, GPIO34~39 입력 전용. <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html>
+- Espressif, "ESP-IDF ADC" — ADC oneshot/continuous, 감쇠 `adc_atten_t`, `Vdata = Vref/k × data/(2^bitwidth−1)`, Vref 1100mV 명목(1000~1200mV), 캘리브레이션. <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc/index.html>
+- Espressif, "ESP-IDF ADC Oneshot Mode Driver" — `adc_oneshot_new_unit()`, `adc_oneshot_config_channel()`, `adc_oneshot_read()`, `adc_oneshot_get_calibrated_result()`, ADC2/Wi-Fi 공유. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/adc/adc_oneshot.html>
+- Espressif, "ESP-IDF LED Control (LEDC)" — `ledc_timer_config()`, `ledc_channel_config()`, `ledc_set_duty()`, `ledc_update_duty()`, 5kHz→13비트 예, duty 범위. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/ledc.html>
+- Espressif, "ESP32 Series Datasheet" — 절대 최대 정격(−0.3~3.6V), 누적 IO 전류 1200mA(칩)/1100mA(모듈), `IOH` 40mA·`IOL` 28mA typ, `VIH` 0.75×VDD, `VIL` 0.25×VDD, 내부 풀업 45kΩ typ. <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
+- Texas Instruments, "Selecting the Right Level-Translation Solution" — 5V CMOS `VIH = 0.7×VCC = 3.5V`, 3.3V 출력 직접 구동 불가, 듀얼 전원 변환기. <https://www.ti.com/lit/an/scea040/scea040.pdf>
+- Texas Instruments, "Logic Guide: Voltage Translation" (SDYA019) — CMOS/TTL 임계, HCT/AHCT/ACT, 레벨 변환 방법. <https://www.ti.com/lit/an/sdya019/sdya019.pdf>
+- Fluke, "Guide to Digital Multimeter Safety" — CAT 등급, 측정 전 점검, 전류 직렬·전압 병렬, 프로브 정격. <https://www.fluke.com/en-gb/learn/blog/safety/multimeter-guide>
+- Battery University, "BU-403: Charging Lead Acid" — 벌크 2.40~2.45V/cell(약 14.4V), float 2.25~2.30V/cell(약 13.5~13.8V), 2.10V/cell≈90% SOC. <https://www.batteryuniversity.com/article/bu-403-charging-lead-acid>
+- Wikipedia, "Load dump" — 발전기-배터리 분리 시 과도 전압, 12V 차량 클램프 수준. <https://en.wikipedia.org/wiki/Load_dump>
+- Diotec, "Automotive Load Dump Protection" — ISO 7637-2/16750-2, 12V 40V/24V 60V 클램프, TVS 보호. <https://diotec.com/en/application-notes.html?file=tl_files/diotec/files/pdf/service/applications/AN_automotive_load_dump_protection.pdf>
+- MCC Semi, "Quick Guide on Automotive Load Dump Protection (ISO 16750-2)" — 5a 79~101V, 5b 35V, TVS 에너지 계산. <https://solutions.mccsemi.com/hubfs/AN5001%20Quick%20Guide%20on%20Automotive%20Load%20Dump%20Protection.pdf>
+- Texas Instruments, "TIC10024-Q1 datasheet" — ISO 16750-2 9~16V 동작, 24V 점프스타트 1분, −14V 역극성 1분, 18V 60분. <https://www.ti.com/document-viewer/TIC10024-Q1/datasheet/GUID-246A814D-33B3-4CB3-89E7-CCD6A372DCF4>
+- STMicroelectronics, "AN5878: How to design a robust automotive CAN system" — 점프스타트·역극성·CAN 트랜시버 보호. <https://www.st.com/resource/en/application_note/an5878-how-to-design-a-robust-automotive-can-system-stmicroelectronics.pdf>
+- Automotive Electronics Council, "AEC-Q100" — 자동차 IC 신뢰성 시험과 온도 Grade 0~3. <http://www.aecouncil.com/AECDocuments.html>
+- Texas Instruments, "SN65HVD230/231/232 3.3-V CAN Bus Transceivers" — 3.0~3.6V, dominant 차동 1.5~3V, 수신 임계 0.5/0.9V, 공통 모드 −2~7V, ±25V 과도. <https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf>
+- Wikipedia, "On-board diagnostics" — OBD-II 16핀 커넥터, 16번 배터리 전원, 6/14번 CAN. <https://en.wikipedia.org/wiki/On-board_diagnostics>

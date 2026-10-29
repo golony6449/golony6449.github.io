@@ -302,7 +302,7 @@ BLE 특성의 notify/indicate를 켜는 디스크립터. 이걸 켜지 않아 �
 산업용 사실상 표준 프로토콜. RTU(바이너리, CRC), ASCII(hex, LRC), TCP(포트 502, MBAP) 변형이 있다.
 
 **OPC UA**
-산업 자동화의 상위 통신 규격. 10장의 계층 표에 등장한다.
+산업 자동화의 상위 통신 규격. 12장의 계층 표에 등장한다.
 
 **CoAP**
 UDP 기반의 REST형 프로토콜. 포트 5683, DTLS 5684, observe와 block-wise 전송을 지원한다.

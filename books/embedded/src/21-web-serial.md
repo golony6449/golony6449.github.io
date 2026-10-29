@@ -1,25 +1,25 @@
-# 18장 브라우저에서 시리얼 다루기
+# 21장 브라우저에서 시리얼 다루기
 
 ## 이 장에서
 
-7장에서는 파이썬이 시리얼 포트를 열어 ELM327과 대화했다. 그런데 현장에서 차량을 빠르게 확인하고 싶을 때, 노트북에 파이썬 환경을 만들고 Flask 서버를 띄우는 일이 부담스러울 수 있다. 브라우저에서 바로 시리얼 포트를 열 수 있다면? **Web Serial API**가 그 길을 연다.
+9장에서는 파이썬이 시리얼 포트를 열어 ELM327과 대화했다. 그런데 현장에서 차량을 빠르게 확인하고 싶을 때, 노트북에 파이썬 환경을 만들고 Flask 서버를 띄우는 일이 부담스러울 수 있다. 브라우저에서 바로 시리얼 포트를 열 수 있다면? **Web Serial API**가 그 길을 연다.
 
 웹 개발자에게 이 장은 두 가지 의미가 있다.
 
 1. **브라우저가 하드웨어에 닿는 경계**를 이해한다. 지금까지 브라우저는 USB·시리얼·블루투스에 직접 접근하지 못했다. Web Serial·Web Bluetooth는 그 경계를 좁히지만, 보안 모델과 사용자 동의가 붙는다.
-2. **7장의 파이썬 대시보드와 역할을 비교**한다. 브라우저는 설치·배포가 쉽고, 파이썬은 장시간 로깅·자동화에 강하다. 둘 중 하나가 정답이 아니라, 상황에 따라 고른다.
+2. **9장의 파이썬 대시보드와 역할을 비교**한다. 브라우저는 설치·배포가 쉽고, 파이썬은 장시간 로깅·자동화에 강하다. 둘 중 하나가 정답이 아니라, 상황에 따라 고른다.
 
 이 장에서 다루는 것:
 
 - Web Serial API의 지원 브라우저·보안 컨텍스트·사용자 제스처
 - ELM327에 연결해 AT 명령과 PID 요청을 보내는 예제
 - 청크로 쪼개져 오는 응답의 줄 경계와 `>` 프롬프트 처리
-- 7장 파이썬 대시보드와의 비교
+- 9장 파이썬 대시보드와의 비교
 - Web Bluetooth로 BLE 방식 ELM327에 연결하는 길과, 블루투스 클래식(SPP)의 한계
 
 **안전 원칙**: 브라우저 예제도 실제 차량에서는 **정차 상태의 읽기 전용**으로만 쓴다. 이 장의 코드는 `AT` 명령과 Mode 01 PID 읽기만 보낸다. 쓰기·삭제·코딩·액추에이터 구동은 넣지 않는다.
 
-## 18.1 브라우저가 시리얼 포트를 여는 방식
+## 21.1 브라우저가 시리얼 포트를 여는 방식
 
 전통적인 웹 페이지는 운영체제의 장치에 직접 접근할 수 없다. 브라우저 샌드박스가 막는다. Web Serial API는 **사용자가 명시적으로 포트를 고르고 허가한 경우에만** 페이지에 `SerialPort` 객체를 준다.
 
@@ -51,7 +51,7 @@
 
 - 지원 여부는 브라우저 업데이트로 바뀐다. 배포 전에 `'serial' in navigator`로 확인하고, 안 되면 안내 문구를 보여 준다.
 - Web Serial은 **직렬 포트**를 다룬다. USB-Serial 칩(CH340, CP210x, FTDI)의 드라이버는 운영체제가 잡는다. 브라우저가 드라이버를 대신 설치하지 않는다. Windows에서 CH340 드라이버가 없으면 포트 자체가 보이지 않는다.
-- Web Bluetooth는 **BLE(Bluetooth Low Energy) GATT**만 다룬다. 블루투스 클래식 SPP는 직접 다루지 못한다. 18.7절에서 자세히 다룬다.
+- Web Bluetooth는 **BLE(Bluetooth Low Energy) GATT**만 다룬다. 블루투스 클래식 SPP는 직접 다루지 못한다. 21.7절에서 자세히 다룬다.
 
 ### baud rate는 직접 정한다
 
@@ -68,10 +68,10 @@ await port.open({
 ```
 
 - ELM327 클론은 38400이 흔하지만 9600인 제품도 있다. 어댑터 설명서를 확인한다.
-- Web Serial에는 **자동 보율 감지**가 없다. 7장의 `ATZ`·`ATI`가 깨져 나오면 보율부터 바꿔 본다.
+- Web Serial에는 **자동 보율 감지**가 없다. 9장의 `ATZ`·`ATI`가 깨져 나오면 보율부터 바꿔 본다.
 - `port.open()`은 이미 열린 포트에 다시 호출하면 예외가 난다. 연결 상태를 직접 관리한다.
 
-## 18.2 첫 연결: AT 명령 보내기
+## 21.2 첫 연결: AT 명령 보내기
 
 최소 예제는 다음과 같다. 버튼을 누르면 포트를 고르고, `ATZ`·`ATE0`·`ATL0`·`ATSP0`를 보낸 뒤 `ATI`와 `ATDPN`을 출력한다.
 
@@ -85,7 +85,7 @@ await port.open({
 <script type="module" src="./app.js"></script>
 ```
 
-`app.js`는 18.3절의 `Elm327Session`을 쓴다.
+`app.js`는 21.3절의 `Elm327Session`을 쓴다.
 
 ```javascript
 import { Elm327Session } from "./elm327.js";
@@ -127,7 +127,7 @@ document.getElementById("connect").addEventListener("click", async () => {
 - `ATE0`는 에코 끄기, `ATL0`은 줄바꿈 끄기다. 에코가 켜져 있으면 보낸 명령이 응답에 섞인다. `Elm327Session.command()`는 명령과 같은 줄을 걸러 낸다.
 - `ATI`는 어댑터 버전, `ATDPN`은 현재 프로토콜 번호다. `A6`이면 ISO 15765-4 CAN 11비트 500kbps다.
 
-## 18.3 줄 경계와 프롬프트 처리
+## 21.3 줄 경계와 프롬프트 처리
 
 시리얼은 바이트 스트림이다. `reader.read()`가 돌려주는 `Uint8Array`는 **원하는 크기로 쪼개지지 않는다.** 한 번에 `"41 0C 1A"`까지만 올 수도 있고, `" F8\r\r>"`가 다음 청크에 올 수도 있다. 3장에서 본 프레이밍 문제가 브라우저에서도 그대로다.
 
@@ -185,7 +185,7 @@ export class ElmLineParser {
 - `parts.pop()`으로 마지막 조각을 남긴다. 다음 청크가 이어 붙을 수 있다.
 - `>`가 줄 끝에 있으면 떼어 내고 `prompt=true`로 표시한다.
 - `>`가 버퍼 중간에 있으면 그 앞까지를 줄로 만들고, 뒤는 다음 명령의 에코일 수 있으므로 버퍼에 남긴다.
-- 이 파서는 순수 함수에 가깝다. 브라우저 없이도 Node에서 테스트할 수 있다. 19장의 단위 테스트 대상이다.
+- 이 파서는 순수 함수에 가깝다. 브라우저 없이도 Node에서 테스트할 수 있다. 22장의 단위 테스트 대상이다.
 
 ### 세션 클래스
 
@@ -285,9 +285,9 @@ export class Elm327Session {
 - `close()`는 리더를 취소하고, 라이터를 닫고, 포트를 닫는다. 순서를 바꾸면 잠금이 남을 수 있다.
 - `readLoop()`는 `await`하지 않는다. 백그라운드에서 계속 돌면서 `pending`을 깨운다.
 
-## 18.4 PID 요청과 값 표시
+## 21.4 PID 요청과 값 표시
 
-`41 <PID>` 줄에서 데이터 바이트를 꺼내 7장과 같은 공식으로 계산한다.
+`41 <PID>` 줄에서 데이터 바이트를 꺼내 9장과 같은 공식으로 계산한다.
 
 ```javascript
 export function parsePid(pid, data) {
@@ -314,7 +314,7 @@ export async function queryPid(session, pid) {
 ```
 
 - `SEARCHING...`은 `ATSP0`가 프로토콜을 찾는 중이라는 뜻이다. 데이터가 아니다.
-- `NO DATA`는 ECU가 응답하지 않았다는 뜻이다. 7장의 문제 해결 순서를 따른다.
+- `NO DATA`는 ECU가 응답하지 않았다는 뜻이다. 9장의 문제 해결 순서를 따른다.
 - `41`로 시작하지 않는 줄(에코, `OK`, 다른 ECU의 응답)은 건너뛴다.
 - 다중 프레임 응답은 ELM327이 `0:`, `1:`로 나눠 보여 준다. `queryPid()`는 단일 프레임 PID만 다룬다. VIN처럼 긴 응답은 `0:`/`1:` 줄을 모아 조립해야 한다(3장).
 
@@ -400,13 +400,13 @@ document.getElementById("disconnect").addEventListener("click", async () => {
 ```
 
 - 폴링 중복을 `polling` 플래그로 막는다. `setInterval`은 이전 `tick()`이 끝나지 않아도 다음 호출을 예약한다.
-- PID 3개를 순차적으로 읽으므로 한 주기는 1초 안팎이다. 빠르게 읽으려면 7장의 다중 PID 요청을 쓴다.
+- PID 3개를 순차적으로 읽으므로 한 주기는 1초 안팎이다. 빠르게 읽으려면 9장의 다중 PID 요청을 쓴다.
 - 탭이 백그라운드로 가면 브라우저가 타이머를 늦출 수 있다. 장시간 로깅에는 브라우저보다 파이썬이 낫다.
 - 페이지를 닫으면 포트가 닫힌다. `beforeunload`에서 `session.close()`를 호출해도 되지만, 비동기 정리가 보장되지는 않는다.
 
-## 18.5 7장 파이썬 대시보드와 비교
+## 21.5 9장 파이썬 대시보드와 비교
 
-| 항목 | 7장 파이썬 대시보드 | 18장 브라우저 |
+| 항목 | 9장 파이썬 대시보드 | 21장 브라우저 |
 |---|---|---|
 | 실행 | `uv run python` + Flask | 정적 페이지 + HTTPS |
 | 포트 접근 | pyserial이 OS 포트를 직접 연다 | 사용자가 브라우저 창에서 포트를 고른다 |
@@ -419,10 +419,10 @@ document.getElementById("disconnect").addEventListener("click", async () => {
 | 최적 용도 | 로거·게이트웨이·장시간 수집 | 현장 빠른 확인·데모·교육 |
 
 - 브라우저는 **설치 없는 데모**에 강하다. 차량 앞에서 노트북을 열고 URL만 열면 된다.
-- 파이썬은 **장시간·무인·다중 클라이언트**에 강하다. 20장의 로그 파이프라인은 파이썬 쪽이 자연스럽다.
+- 파이썬은 **장시간·무인·다중 클라이언트**에 강하다. 23장의 로그 파이프라인은 파이썬 쪽이 자연스럽다.
 - 둘을 함께 쓸 수도 있다. 파이썬이 로그를 수집하고, 브라우저는 그 로그를 읽어 시각화한다. 이때 브라우저는 시리얼 포트를 직접 열지 않는다.
 
-## 18.6 Web Bluetooth로 BLE ELM327에 연결하기
+## 21.6 Web Bluetooth로 BLE ELM327에 연결하기
 
 ELM327 어댑터에는 USB·블루투스 클래식(SPP)·BLE·Wi-Fi 제품이 있다. **Web Bluetooth는 BLE GATT만 다룬다.**
 
@@ -461,7 +461,7 @@ async function connectBle() {
 - `acceptAllDevices: true`는 모든 BLE 기기를 보여 준다. `optionalServices`에 접근할 서비스를 넣지 않으면 `getPrimaryServices()`에서 보이지 않을 수 있다.
 - 콘솔에서 `properties`를 보고 `write`/`writeWithoutResponse` 특성과 `notify` 특성을 고른다.
 - `startNotifications()`를 호출해야 `characteristicvaluechanged` 이벤트가 온다. BLE의 CCCD(Client Characteristic Configuration Descriptor)를 켜는 것과 같다.
-- 응답은 `TextDecoder`로 디코딩하고, 18.3절의 줄 파서에 넣는다. BLE 패킷은 더 잘게 쪼개질 수 있으므로 버퍼링이 필수다.
+- 응답은 `TextDecoder`로 디코딩하고, 21.3절의 줄 파서에 넣는다. BLE 패킷은 더 잘게 쪼개질 수 있으므로 버퍼링이 필수다.
 
 ```javascript
 async function attachBle(chars, parser, onLines) {
@@ -493,7 +493,7 @@ async function attachBle(chars, parser, onLines) {
 - BLE는 연결 인터벌·MTU·알림 지연 때문에 USB보다 응답이 느리고 불규칙하다. 타임아웃을 넉넉히 둔다.
 - Web Bluetooth도 **보안 컨텍스트**와 **사용자 제스처**가 필요하다. `requestDevice()`는 클릭 핸들러 안에서 호출한다.
 
-## 18.7 흔한 실수
+## 21.7 흔한 실수
 
 | 증상 | 원인 후보 | 확인 |
 |---|---|---|
@@ -503,13 +503,13 @@ async function attachBle(chars, parser, onLines) {
 | `Failed to open serial port` | 이미 열린 포트, 보율·권한 | 다른 탭/앱 닫기, 보율 확인 |
 | 응답이 잘리거나 섞임 | 청크 경계, 프롬프트 전 반환, 동시 명령 | 리더 하나, `>`까지 읽기, 명령 큐 |
 | `InvalidStateError`/lock | 리더를 여러 번 만들거나 reader/writer 잠금 충돌 | `getReader()`는 한 번, `releaseLock()` |
-| `NO DATA` | PID 미지원, 시동 OFF, 프로토콜 불일치 | 7장 문제 해결 순서 |
+| `NO DATA` | PID 미지원, 시동 OFF, 프로토콜 불일치 | 9장 문제 해결 순서 |
 | `ATZ`가 깨짐 | 보율 불일치 | 38400/9600 교차 시험 |
 | BLE 기기가 안 보임 | 클래식 SPP 어댑터, BLE 아님 | 제품 스펙, GATT 탐색 |
 | BLE 응답이 끊김 | notify 미설정, MTU, 쓰기 방식 | `startNotifications()`, `writeWithoutResponse` |
 | 탭이 백그라운드에서 느려짐 | 브라우저 타이머 스로틀 | 장시간 로깅은 파이썬으로 |
 
-## 18.8 체크리스트
+## 21.8 체크리스트
 
 - [ ] HTTPS 또는 `localhost`에서 실행했는가
 - [ ] `requestPort()`를 사용자 클릭 안에서 호출했는가
@@ -552,7 +552,7 @@ ELM327이 다음 청크를 보냈다.
 " F8 \r\r>"
 ```
 
-18.3절의 `ElmLineParser`에 두 청크를 차례로 넣었을 때 각 호출의 `lines`와 `prompt`를 쓰라.
+21.3절의 `ElmLineParser`에 두 청크를 차례로 넣었을 때 각 호출의 `lines`와 `prompt`를 쓰라.
 
 ### 3. (중급) 프롬프트
 

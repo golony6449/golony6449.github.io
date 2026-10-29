@@ -129,7 +129,7 @@
 
 ## C.10 펌웨어·FreeRTOS·Rust
 
-접속일은 2026-10-29이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)과 v5.4를 함께 확인했다. 이 책의 13·15장 코드는 v5.x의 legacy TWAI API를 기준으로 한다.
+접속일은 2026-10-29이다. ESP-IDF 문서는 stable(작성 시점 v6.1 계열)과 v5.4를 함께 확인했다. 이 책의 16·18장 코드는 v5.x의 legacy TWAI API를 기준으로 한다.
 
 - Espressif, "ESP-IDF v5.4 TWAI" — legacy `driver/twai.h` API, 드라이버 상태, RX 큐, 경보 플래그, `twai_initiate_recovery()`, 상태 정보. <https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/peripherals/twai.html>
 - Espressif, "ESP-IDF TWAI (stable)" — v6.x의 `twai_node_*` API, 콜백 기반 수신, `twai_node_recover()`, 버스오프 복구. <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/twai.html>

@@ -281,8 +281,8 @@ rpm_s = pd.Series(rpm, index=pd.to_datetime(t_rpm, unit="s"))
 cool_s = pd.Series(cool, index=pd.to_datetime(t_cool, unit="s"))
 grid = pd.date_range("1970-01-01", periods=5, freq="1s")
 
-print(rpm_s.resample("1s").mean().reindex(grid).round(1).tolist())
-print(cool_s.reindex(grid).round(2).tolist())
+print("rpm 1s mean:", rpm_s.resample("1s").mean().reindex(grid).round(1).tolist())
+print("cool reindex:", cool_s.reindex(grid).round(2).tolist())
 ```
 
 실행 결과(2026-10-30, pandas 3.1.0):
@@ -301,14 +301,14 @@ right["ts_obs"] = right["ts"]
 aligned = pd.merge_asof(left, right, on="ts", direction="backward",
                         tolerance=pd.Timedelta("1.5s"))
 aligned["age_s"] = (aligned["ts"] - aligned["ts_obs"]).dt.total_seconds()
-print(aligned["coolant"].round(2).tolist())
-print(aligned["age_s"].tolist())
+print("merge_asof coolant:", aligned["coolant"].round(2).tolist())
+print("merge_asof age_s  :", aligned["age_s"].tolist())
 
 cool_on = cool_s.reindex(grid)
 cool_gap = cool_on.copy()
 cool_gap.iloc[2:4] = np.nan
-print(cool_gap.ffill(limit=1).round(2).tolist())
-print(cool_gap.interpolate(limit=1, limit_area="inside").round(2).tolist())
+print("gap ffill(1)      :", cool_gap.ffill(limit=1).round(2).tolist())
+print("gap interp(1)     :", cool_gap.interpolate(limit=1, limit_area="inside").round(2).tolist())
 ```
 
 실행 결과:
@@ -320,7 +320,7 @@ gap ffill(1)      : [80.0, 80.62, 80.62, nan, 81.9]
 gap interp(1)     : [80.0, 80.62, 81.05, nan, 81.9]
 ```
 
-- `merge_asof`는 각 격자 시각에서 **가장 최근** 관측값을 가져온다. `tolerance`를 넘으면 `NaN`이다. 3초 격자에서는 마지막 관측이 1초 전이라 나이 2초가 되고, 허용치 1.5초를 넘어 결측이 되었다.
+- `merge_asof`는 각 격자 시각에서 **가장 최근** 관측값을 가져온다. `tolerance`를 넘으면 `NaN`이다. 3초 격자에서는 마지막 관측이 1초에 있어 나이 2초가 되고, 허용치 1.5초를 넘어 결측이 되었다.
 - `ffill(limit=1)`은 연속 결측을 최대 1개만 채운다. 3초는 채우지 않는다.
 - `interpolate(limit=1, limit_area="inside")`는 양쪽에 실제 값이 있는 구간만 보간한다. 3초는 limit에 걸려 결측으로 남는다.
 - `age_s`를 함께 저장하는 것이 중요하다. 값만 보면 80.62가 2초 전 값인지 지금 값인지 알 수 없다.
@@ -368,7 +368,7 @@ offset = 1/2 × [(T2 - T1) + (T3 - T4)]
 delay  = (T4 - T1) - (T3 - T2)
 ```
 
-- 오프셋은 서버와 클라이언트 시계의 차이다. 이 값을 빼서 시계를 맞춘다.
+- 오프셋은 **서버 시계에서 클라이언트 시계를 뺀 값**이다. 클라이언트 시계를 서버에 맞추려면 이 값을 클라이언트 시계에 더한다. 서버 시각을 클라이언트 시각으로 바꿀 때는 반대로 뺀다.
 - 지연은 왕복 시간에서 서버 처리 시간을 뺀 값이다. 지연이 크거나 비대칭이면 오프셋 추정이 부정확해진다.
 - SNTP는 NTPv4의 부분집합이다. 구현이 단순하지만, NTP와 같은 방식으로 오프셋을 계산한다.
 

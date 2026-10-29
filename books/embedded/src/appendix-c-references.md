@@ -290,3 +290,21 @@
 - Kubernetes, "Deployment" — 롤링 업데이트, `kubectl rollout undo`(롤백), 배포 상태 확인. <https://kubernetes.io/docs/concepts/workloads/controllers/deployment/>
 - Kubernetes, "Pod Lifecycle" — `CrashLoopBackOff`, 컨테이너 재시작 백오프. <https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/>
 - Martin Fowler, "BlueGreenDeployment" — 블루·그린 배포의 전환·롤백 개념. <https://martinfowler.com/bliki/BlueGreenDeployment.html>
+
+## C.16 신호 처리·데이터 품질
+
+접속일은 2026-10-30이다. 29~31장의 수식·수치는 교재·표준 요약·공식 문서를 근거로 했고, 예제 출력은 필자가 실행한 결과다. OBD PID 공식·범위와 ELM327 타이밍은 C.1의 OBD-II PIDs·ELM327 데이터시트, C.7의 SAE J1979를 재사용했다.
+
+- Steven W. Smith, *The Scientist and Engineer's Guide to Digital Signal Processing*, California Technical Publishing, 1997 — 3장 "ADC and DAC"의 표본화 정리·에일리어싱, 15장 "Moving Average Filters"의 `√N` 잡음 감소, 19장 "Recursive Filters"의 단일 극 필터 계수·시상수. <https://www.dspguide.com/ch3/2.htm>, <https://www.dspguide.com/ch15/2.htm>, <https://www.dspguide.com/ch19/2.htm>
+- John W. Tukey, *Exploratory Data Analysis*, Addison-Wesley, 1977 — 중앙값 필터의 기원으로 인용되는 책.
+- Greg Welch·Gary Bishop, "An Introduction to the Kalman Filter", UNC-Chapel Hill TR 95-041(2006 개정) — 칼만 필터의 예측·갱신, 칼만 이득. <https://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf>
+- NIST/SEMATECH, "e-Handbook of Statistical Methods, 1.3.5.6 Detection of Outliers" — 수정 z-점수 `0.6745(x-median)/MAD`, 임계값 3.5, 정규성 가정의 한계. <https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm>
+- Boris Iglewicz·David C. Hoaglin, *How to Detect and Handle Outliers*, ASQC Quality Press, 1993 — 수정 z-점수의 임계값 3.5 제안.
+- IETF RFC 5905, "Network Time Protocol Version 4: Protocol and Algorithms Specification" — 오프셋 `1/2[(T2-T1)+(T3-T4)]`, 지연 `(T4-T1)-(T3-T2)`, SNTP가 NTPv4의 부분집합이라는 설명. <https://www.rfc-editor.org/rfc/rfc5905.html>
+- Silicon Labs, "RTC Drift Management" — 고품질 수정 ±20ppm ≈ 1.7초/일, 일반 32.768kHz 수정 합산 ±250ppm ≈ 21.6초/일. <https://docs.silabs.com/wiseconnect/4.1.1/wifi-siwg917-rtc-management/rtc-drift-management>
+- pandas, "DataFrame.resample" — `rule`, `closed`, `label`, `origin`, 다운샘플링·업샘플링·`ffill`/`bfill`. <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.resample.html>
+- pandas, "DataFrame.interpolate" — `method`, `limit`, `limit_area`로 보간 범위를 제한하는 옵션. <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.interpolate.html>
+- Python, "time — Time access and conversions" — `time()`, `time_ns()`, `monotonic()`, `monotonic_ns()`의 의미. <https://docs.python.org/3/library/time.html>
+- MDN, "Performance.now()" — `performance.now()`가 단조 증가하고 페이지/프로세스 기준점을 쓰는 설명. <https://developer.mozilla.org/en-US/docs/Web/API/Performance/now>
+- NumPy, "Discrete Fourier Transform (numpy.fft)" — `rfft`, `rfftfreq`로 주파수 피크를 확인하는 데 사용. <https://numpy.org/doc/stable/reference/routines.fft.html>
+- OBD-II PID 공식·범위: C.1의 Wikipedia "OBD-II PIDs"와 필자의 실차 기록(9.4절). ELM327 `AT ST`·다중 PID·응답 시간: C.1의 ELM327 데이터시트와 C.7의 SAE J1979. 같은 출처를 다시 받지 않고 책 본문의 값을 사용했다.

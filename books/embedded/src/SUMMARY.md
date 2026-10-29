@@ -6,6 +6,7 @@
 - [2장 UART: 가장 단순한 시리얼](02-uart.md)
 - [3장 프레이밍과 파싱: 메시지 경계 만들기](03-framing-parsing.md)
 - [4장 웹 개발자를 위한 전기 기초](04-electricity-basics.md)
+- [5장 GPIO·ADC·PWM: 핀으로 세상과 말하기](05-gpio-adc-pwm.md)
 - [6장 I2C와 SPI: 보드 안의 버스](06-i2c-spi.md)
 - [7장 CAN: 여러 노드가 말하는 버스](07-can.md)
 - [8장 자동차는 거대한 CAN 네트워크다](08-car-network.md)

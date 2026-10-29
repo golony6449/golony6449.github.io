@@ -334,7 +334,7 @@ for line in simulate(["crash", "crash", "crash", "ok", "crash"]):
 coredump, data, coredump, , 64K,
 ```
 
-- Flash 암호화를 켰다면 `coredump` 파티션에 `encrypted` 플래그를 붙인다. 그러지 않으면 `idf.py coredump-info`가 암호문을 읽어 실패할 수 있다.
+- Flash 암호화를 켰다면 `coredump` 파티션에 `encrypted` 플래그를 붙일 수 있다. 그러면 덤프가 암호화되어 저장되지만, 호스트의 `idf.py coredump-info`/`coredump-debug`가 플래시의 암호문을 직접 읽을 수 없다. 이때는 장치에서 복호화된 덤프를 받아 `idf.py coredump-info -c <file>`로 분석한다.
 - 파티션 크기는 태스크 수·스택 크기에 따라 달라진다. ESP-IDF 문서는 `20 + max_tasks × (12 + TCB size + max stack)` 이상을 권장한다.
 - PSRAM을 태스크 스택으로 쓰는 경우 Flash core dump가 제한될 수 있다. 외부 RAM 내용은 일부만 캡처된다.
 

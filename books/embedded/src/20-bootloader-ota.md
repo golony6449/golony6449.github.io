@@ -100,7 +100,7 @@ ota_1,    app,  ota_1,   0x210000, 1M,
 
 ### 파티션 크기와 이미지 크기
 
-앱 이미지는 파티션 크기보다 작아야 한다. 빌드 결과의 `.bin` 크기를 확인하고, OTA 슬롯 크기에 여유를 둔다. 이미지가 커지면 OTA가 시작되자마자 `ESP_ERR_OTA_VALIDATE_FAILED`나 쓰기 오류로 실패할 수 있다.
+앱 이미지는 파티션 크기보다 작아야 한다. 빌드 결과의 `.bin` 크기를 확인하고, OTA 슬롯 크기에 여유를 둔다. 이미지가 커지면 쓰는 도중 `esp_ota_write()`가 `ESP_ERR_INVALID_SIZE`(파티션 경계 초과)로 실패할 수 있다. `ESP_ERR_OTA_VALIDATE_FAILED`는 magic byte가 틀리거나 `esp_ota_end()`에서 이미지·서명 검증이 실패했을 때다.
 
 ```bash
 # 빌드 결과의 앱 이미지 크기 확인(예)

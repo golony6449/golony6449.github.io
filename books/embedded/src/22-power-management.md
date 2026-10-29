@@ -368,8 +368,8 @@ CAN 프레임은 짧고, 깨우기 신호는 일정 시간 유지되어야 한�
 
 - 500kbps에서 한 비트는 **2µs**다.
 - CAN의 비트 스터핑은 같은 레벨이 5비트를 넘지 않게 한다. 최대 연속 dominant 구간은 약 **5비트 = 10µs**다.
-- ESP-IDF 문서는 GPIO 깨우기 신호가 **RTC slow clock 3주기 이상** 유지되어야 한다고 설명한다.
-- RTC slow clock이 150kHz라면 3주기는 약 **20µs**다. 500kbps의 최대 dominant 구간 10µs보다 길다. 즉, 프레임이 지나가는 동안 깨우기 조건을 만족하지 못할 수 있다.
+- ESP-IDF 문서는 HP 주변장치 power-down 시의 GPIO 깨우기(`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown()`)에 대해 신호가 **RTC slow clock 3주기 이상** 유지되어야 한다고 설명한다. ext0/ext1에는 같은 최소 펄스 폭이 명시되어 있지 않다.
+- 그래도 ext0/ext1의 깨우기 회로는 RTC slow clock 영역에 있다. RTC slow clock이 150kHz라면 1주기가 약 **6.7µs**이므로, 10µs dominant 펄스는 샘플링 위상에 따라 놓칠 수 있다(확인 필요).
 
 그래서 RXD를 직접 RTC GPIO에 연결하는 방식은 **프레임을 놓칠 수 있다.** 래치·펄스 확장 회로로 dominant 신호를 수십 µs 이상 유지하거나, wake 출력이 있는 트랜시버를 쓰거나, 타이머 wake를 함께 쓴다.
 

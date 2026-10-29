@@ -220,7 +220,7 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 |---|---|---|---|
 | OTA 후 예전 버전이 부팅된다 | `esp_ota_set_boot_partition()` 누락, `otadata` 미갱신, 롤백 발생 | 부팅 로그의 파티션·버전, `esp_ota_get_boot_partition()` | set_boot 호출, 롤백 원인 확인 |
 | OTA가 성공했는데 다음 리셋에서 되돌아간다 | `esp_ota_mark_app_valid_cancel_rollback()` 미호출, 자체 시험 실패 | `esp_ota_get_state_partition()`, 자체 시험 로그 | 통과 후 mark valid, 시험 범위 조정 |
-| OTA가 시작하자마자 실패한다 | 이미지가 슬롯보다 큼, 파티션 타입 오류 | 이미지 크기, 파티션 CSV, `esp_ota_begin()` 오류 | 슬롯 크기 확대 또는 이미지 축소 |
+| OTA 쓰기가 중간에 실패한다 | 이미지가 슬롯보다 큼, 파티션 타입 오류 | 이미지 크기, 파티션 CSV, `esp_ota_write()`의 `ESP_ERR_INVALID_SIZE`, `esp_ota_end()` 검증 오류 | 슬롯 크기 확대 또는 이미지 축소 |
 | HTTPS OTA가 인증서 오류로 실패한다 | 장치 시각 오류, 루트 인증서·번들 누락, 리다이렉트 대상 인증서 누락 | 로그의 TLS 오류, `date`, 서버 인증서 | SNTP, cert bundle, 대상 인증서 추가 |
 | OTA 도중 전원이 꺼졌다 | 배터리·USB·리셋 | 전원 로그, OTA 재시도 | 현재 앱은 유지된다. 재시도·저전압 차단 |
 | OTA 중 워치독 리셋 | 플래시 쓰기·다운로드가 타임아웃 초과 | TWDT 로그, OTA 청크 크기 | 청크 단위 리셋, 전용 태스크·타임아웃 |

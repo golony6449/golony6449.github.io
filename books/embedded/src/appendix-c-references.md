@@ -23,12 +23,16 @@
 - CSS Electronics, "CAN DBC File Explained" — DBC 메시지·신호·바이트 순서·배율·오프셋 개념. <https://www.csselectronics.com/pages/can-dbc-file-database-intro>
 - commaai, "opendbc" — 공개 DBC와 차량 신호 디코딩 예. <https://github.com/commaai/opendbc>
 
+- Automotive Diagnosis, "CAN-BUS Explained | Everything You Need to Know About CAN-BUS" (YouTube, 2023) — C-CAN·B-CAN·M-CAN과 게이트웨이(기아차 배선도 예), 멀티미터로 저항·전압·단락 점검, 오실로스코프 파형. 같은 채널 재생목록에 LIN·K-라인·통신 불가 진단 영상이 이어진다. <https://www.youtube.com/watch?v=bvyHx-C2Xfs>
+- Waveshare, "USB-CAN-A" — CH340 기반 직렬형 USB-CAN 어댑터, 전용 프레임 형식. python-can의 `seeedstudio` 인터페이스와 같은 형식이다. <https://www.waveshare.com/wiki/USB-CAN-A>
+
 ## C.3 UDS와 제조사 데이터
 
 - Wikipedia, "Unified Diagnostic Services" — UDS 서비스 표, 부정 응답 형식, NRC 표. <https://en.wikipedia.org/wiki/Unified_Diagnostic_Services>
 - ISO, "ISO 14229-1:2020 Unified diagnostic services" — UDS 표준 원문(유료). <https://www.iso.org/standard/72439.html>
 - ISO, "ISO 15765-2:2016 Diagnostic communication over CAN" — ISO-TP 표준 원문(유료). <https://www.iso.org/standard/66574.html>
 - OBDb, "Kia-Sorento" — 쏘렌토 제조사 PID/DID 정의(JSON). <https://github.com/OBDb/Kia-Sorento>
+- philipkocanda, "canair" — 현대 아이오닉(AE) 등의 제어기별 UDS 읽기(`22`)·입출력 제어(`2F`) 기록과 확인 여부, IGPM(`0x770`)이 OBD 포트 뒤 게이트웨이라는 관찰. <https://github.com/philipkocanda/canair>
 - OBDb, "Hyundai-Santa-Fe" — 같은 플랫폼의 DPF 매연량(`ED94`) 정의. <https://github.com/OBDb/Hyundai-Santa-Fe>
 - OBDb, `Kia-Sorento` signalsets v3 default.json — `bix`, `mul`, `div`, `add`, `sign` 해석. <https://raw.githubusercontent.com/OBDb/Kia-Sorento/main/signalsets/v3/default.json>
 - OBDb, `Hyundai-Santa-Fe` signalsets v3 default.json — `ED94` DPF soot mass 정의. <https://raw.githubusercontent.com/OBDb/Hyundai-Santa-Fe/main/signalsets/v3/default.json>

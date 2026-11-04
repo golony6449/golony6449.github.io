@@ -78,7 +78,10 @@
 - ISO 15765-2 — Diagnostic communication over CAN, transport protocol.
 - ISO 15765-4 — Requirements for emissions-related systems.
 - ISO 14229-1 — Unified diagnostic services, application layer.
-- ISO 11898-1/-2 — CAN data link layer / high-speed physical layer.
+- ISO 11898-1/-2 — CAN data link layer / high-speed physical layer. CAN FD·CAN XL 데이터링크와 SIC 트랜시버 요구를 포함한다.
+- ISO 17987 — LIN(Local Interconnect Network) 물리·데이터링크·진단·노드 관리 표준.
+- ISO 13400-2 — DoIP(Diagnostics over IP) 전송·네트워크 계층.
+- ISO 17458 — FlexRay 통신 시스템(데이터링크·물리 계층).
 - ISO 7637-2 — Road vehicles — Electrical disturbances from conduction and coupling(유료). 차량 전원선 과도 전압 시험.
 - ISO 16750-2 — Road vehicles — Environmental conditions and testing for electrical and electronic equipment — Electrical loads(유료). load dump·점프스타트·역극성·콜드 크랭크.
 
@@ -229,3 +232,42 @@
 - Automotive Electronics Council, "AEC-Q100" — 자동차 IC 신뢰성 시험과 온도 Grade 0~3. <http://www.aecouncil.com/AECDocuments.html>
 - Texas Instruments, "SN65HVD230/231/232 3.3-V CAN Bus Transceivers" — 3.0~3.6V, dominant 차동 1.5~3V, 수신 임계 0.5/0.9V, 공통 모드 −2~7V, ±25V 과도. <https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf>
 - Wikipedia, "On-board diagnostics" — OBD-II 16핀 커넥터, 16번 배터리 전원, 6/14번 CAN. <https://en.wikipedia.org/wiki/On-board_diagnostics>
+
+## C.14 CAN FD·LIN·차량 이더넷
+
+접속일은 2026-10-30이다. CAN FD·LIN·DoIP·SOME/IP의 표준 원문은 유료이므로, 공개 규격·제조사 문서·오픈소스 문서를 2차 근거로 사용했다. 실제 구현에서는 해당 표준의 개정판을 확인한다.
+
+### CAN FD
+
+- Bosch, "CAN with Flexible Data-Rate, Specification Version 1.0" (2012) — FDF/EDL, BRS, ESI, DLC 9~15, CRC 17/21, RTR 없음. <https://community.st.com/ysqtg83639/attachments/ysqtg83639/stm32-mcu-products-forum/253284/1/Bosch-CAN%20with%20Flexible%20Data-Rate.pdf>
+- Vector, "CAN FD Introduction" — 프레임 형식, DLC 대응, CRC, BRS/ESI, 데이터 구간 타이밍. <https://cdn.vector.com/cms/content/know-how/can/Slides/CAN_FD_Introduction_EN.pdf>
+- Kvaser, "Supporting CAN FD and the non-ISO version" — Bosch 1.0과 ISO 11898-1:2015의 차이, 스터프 카운트, 호환성. <https://kvaser.com/supporting-can-fd-and-the-non-iso-version/>
+- Wikipedia, "CAN FD" — 64바이트, DLC 대응, CRC 17/21, 데이터 구간 5~8Mbps. <https://en.wikipedia.org/wiki/CAN_FD>
+- Linux kernel, "CAN" — `bitrate`/`dbitrate`/`fd on`, MTU 72, `CAN_RAW_FD_FRAMES`, `can_fd_len2dlc()`, `fd-non-iso`. <https://www.kernel.org/doc/html/latest/networking/can.html>
+- python-can, "Message" — `is_fd`, `bitrate_switch`, `error_state_indicator`, `dlc`의 의미, `check` 인자. <https://python-can.readthedocs.io/en/stable/message.html>
+- Linux kernel, "ISO 15765-2" — ISO-TP 2016의 `tx_dl`, CAN FD 지원. <https://www.kernel.org/doc/Documentation/networking/iso15765-2.rst>
+- ISO, "ISO 15765-4:2021 Diagnostic communication over CAN — Requirements for emissions-related systems" — OBDonUDS용 11/29비트 식별자, 250/500kbps nominal timing(유료). <https://store.accuristech.com/cie/products/preview/2231893>
+- SAE, "J1979-2: E/E Diagnostic Test Modes: OBDonUDS" — UDS 기반 OBD, ISO 15765-4/ISO 13400-2 전송. <https://www.sae.org/standards/content/j1979/2_202104/>
+
+### LIN
+
+- ISO, "ISO 17987" 개요 — LIN의 단일 선, 1~20kbps, 스케줄 테이블, master/slave, 12V/24V 물리 계층. <https://store.accuristech.com/products/preview/1923822>
+- LIN Specification 1.3 — 프레임 구조, PID 패리티, 클래식 체크섬, 진단 프레임. <https://lniv.fe.uni-lj.si/courses/ndes/LIN_Spec_1_3.pdf>
+- Microchip, "PIC32AK1216GC41064 Family Data Sheet" — LIN 체크섬 예(`4A 55 93 E5` → `0xE6`), COEN 비트. <https://ww1.microchip.com/downloads/aemDocuments/documents/MCU16/ProductDocuments/DataSheets/PIC32AK1216GC41064-Family-Data-Sheet-DS70005592.pdf>
+- Atmel, "ATA664251 LIN transceiver" 데이터시트 — 클래식/확장 체크섬 식, 0x3C/0x3D의 클래식 체크섬. <https://cdn.soselectronic.com/productdata/99/26/92526486/ata664251-wgqw.pdf>
+- AUTOSAR, "Specification of LIN Interface" (R24-11) — 스케줄 테이블, 프레임 헤더/응답, 네트워크 관리. <https://www.autosar.org/fileadmin/standards/R24-11/CP/AUTOSAR_CP_SWS_LINInterface.pdf>
+- Wikipedia, "Local Interconnect Network" — 단일 선, 19.2kbps/40m, 1 master + 15 slave, 브레이크·싱크·PID, 체크섬. <https://en.wikipedia.org/wiki/Local_Interconnect_Network>
+
+### 차량 이더넷·DoIP·SOME/IP
+
+- Vector CANoe, "DoIP" — 8바이트 헤더, payload type, 차량 탐색, 라우팅 활성화 요청/응답, 진단 메시지. <https://help.vector.com/CANoe/19.4/en/Help/Content/Topics/CANoeCANalyzer/Ethernet/Protocols/ProtocolDoIP.htm>
+- AUTOSAR, "Specification of Diagnostic over IP" (R25-11) — DoIP payload type, UDP/TCP 연결 종류, 헤더 NACK. <https://www.autosar.org/fileadmin/standards/R25-11/CP/AUTOSAR_CP_SWS_DiagnosticOverIP.pdf>
+- ISO, "ISO 13400-2:2019 Diagnostic communication over Internet Protocol (DoIP)" — 프로토콜 버전 0x03, 8바이트 헤더(유료). <https://www.iso.org/standard/74785.html>
+- Vector CANoe, "SOME/IP" — 16바이트 헤더, Message Type, Return Code, SOME/IP-TP, SD. <https://help.vector.com/CANoe/19.4/en/Help/Content/Topics/CANoeCANalyzer/Ethernet/Protocols/ProtocolSOMEIPContent.htm>
+- AUTOSAR, "SOME/IP Protocol Specification" (R24-11) — 헤더 필드, 메서드·이벤트 ID, Length 기준, 메시지 타입. <https://www.autosar.org/fileadmin/standards/R24-11/FO/AUTOSAR_FO_PRS_SOMEIPProtocol.pdf>
+- AUTOSAR, "Specification of Service Discovery" (R22-11) — FindService/OfferService/SubscribeEventgroup, TTL, 옵션. <https://www.autosar.org/fileadmin/standards/R22-11/CP/AUTOSAR_SWS_ServiceDiscovery.pdf>
+- Texas Instruments, "A zone architecture and Ethernet represent the future of networking in vehicles" — 도메인→존, 이더넷 백본, 카메라·레이다·라이다 대역폭. <https://www.ti.com/document-viewer/lit/html/SSZTD02A>
+- Rohde & Schwarz, "10BASE-T1S basics" — 10Mbps, 25m 멀티드롭, 8노드, PLCA. <https://www.rohde-schwarz.com/webhelp/RTP_HTML_UserManual_en/Content/8f4b7e2a5a774fa7.htm>
+- ISO/IEC, "TR 11801-9906:2025" — 100BASE-T1/1000BASE-T1/10BASE-T1S 채널·거리 규격. <https://www.iso.org/standard/91327.html>
+- NXP, "Networking the FlexRay Way" — 10Mbps, 2 channel, TDMA 정적/동적 구간, star/bus. <https://www.nxp.com/docs/en/supporting-information/NETWRKFRWAY.pdf>
+- ISO, "ISO 17458 FlexRay communications system" — FlexRay 데이터링크·물리 계층 표준(유료). <https://www.iso.org/standard/59804.html>

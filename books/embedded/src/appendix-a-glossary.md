@@ -375,6 +375,18 @@ DPF에 쌓인 그을음을 높은 온도에서 태워 없애는 과정. 자연(p
 **MCP2515**
 SPI로 MCU에 붙는 CAN 컨트롤러. Raspberry Pi 같은 SBC에 CAN을 추가할 때 쓴다.
 
+**SoC (State of Charge)**
+배터리에 남아 있는 충전량의 비율. 전기차·하이브리드의 BMS가 관리하며, 표준 OBD-II PID만으로 항상 읽을 수 있는 값은 아니다.
+
+**SOH (State of Health)**
+배터리의 현재 용량·성능이 초기 상태에 비해 어느 정도인지 나타내는 지표. 제조사·규제마다 정의가 다르다.
+
+**BMS (Battery Management System)**
+구동 배터리의 셀 전압·온도·전류·절연·충전 상태를 관리하는 시스템. 상세 데이터는 제조사 진단(Mode 22/UDS 0x22)으로 읽는 경우가 많다.
+
+**J1979-2 / OBDonUDS**
+OBD-II를 UDS 서비스 위에 올린 SAE 표준. Mode 01 PID를 `0x22` DID로 접근하는 방식이 쓰인다. J1979-DA는 PID/DID 정의를 담은 디지털 부속 문서다.
+
 ## A.6 가상 실습·테스트·데이터
 
 **SocketCAN**
@@ -556,3 +568,65 @@ OBD 포트·정비 도구가 접근할 수 있는 ECU·서비스·세션을 제�
 
 **심층 방어(defense in depth)**
 구조(게이트웨이·분리), 인증(SecOC), 감시(IDS), 접근 통제(0x29), 업데이트(R156), 키 관리 등 여러 층을 겹치는 설계 원칙.
+
+## A.10 CAN 상위 프로토콜(J1939·CANopen·NMEA 2000)
+
+**J1939**
+트럭·버스·건설기계·농기계의 CAN 기반 응용 프로토콜. 29비트 ID, PGN/SPN, 소스 주소, TP, DM1을 정의한다.
+
+**PGN (Parameter Group Number)**
+J1939에서 메시지 묶음을 나타내는 번호. EDP/DP/PF/PS로 구성되며, PDU1에서는 PS가 목적지 주소다.
+
+**SPN (Suspect Parameter Number)**
+J1939 PGN 안의 개별 신호 번호. 해상도·오프셋이 SPN마다 다르다. OBD-II PID와 비슷하지만 접근 방식이 다르다.
+
+**PDU1 / PDU2**
+J1939의 PGN 형식. PF < 240이면 PDU1(PS는 목적지 주소), PF ≥ 240이면 PDU2(PS는 그룹 확장)다.
+
+**BAM (Broadcast Announce Message)**
+J1939 TP의 broadcast 방식. TP.CM 제어 바이트 `0x20`, 목적지 `0xFF`, 패킷 간 50~200ms다.
+
+**DM1 / DM2 / DM3**
+J1939 진단 메시지. DM1은 활성 고장(주기 broadcast), DM2는 과거 고장(요청), DM3는 과거 고장 삭제(실차에서 보내지 않음)다.
+
+**FMI (Failure Mode Identifier)**
+J1939 DTC에서 고장의 종류를 나타내는 5비트 값. 정상 범위 위/아래, 전압 높음/낮음, 회로 열림 등이다.
+
+**OC (Occurrence Count)**
+J1939 DTC에서 같은 고장이 발생한 횟수를 나타내는 7비트 값. 127은 사용할 수 없음이다.
+
+**CANopen**
+CiA 301 기반의 산업용 CAN 응용 프로토콜. 11비트 ID, 객체 사전, NMT, SDO, PDO를 쓴다.
+
+**객체 사전(Object Dictionary, OD)**
+CANopen 장치가 제공하는 값·설정의 표. 16비트 index와 8비트 subindex로 접근한다.
+
+**EDS (Electronic Data Sheet)**
+CANopen 객체 사전을 텍스트로 표현한 파일. 웹의 OpenAPI 문서에 해당한다.
+
+**NMT (Network Management)**
+CANopen 노드의 상태 기계. Initialisation, Pre-operational, Operational, Stopped가 있다.
+
+**SDO (Service Data Object)**
+CANopen의 요청/응답 객체 접근. `0x600+NodeID` 요청, `0x580+NodeID` 응답을 쓴다.
+
+**PDO (Process Data Object)**
+CANopen의 주기·이벤트 데이터. 객체를 매핑해 최대 8바이트(클래식 CAN)로 보낸다.
+
+**COB-ID (Communication Object Identifier)**
+CANopen 통신 객체의 CAN ID. 기능(NMT/SDO/PDO/EMCY)과 노드 ID가 함께 들어간다.
+
+**하트비트(heartbeat)**
+CANopen 노드가 `0x700+NodeID`로 보내는 생존 신호. 상태 바이트와 토글 비트가 들어 있다.
+
+**EMCY (Emergency)**
+CANopen 노드가 오류를 알리는 메시지. COB-ID는 `0x080+NodeID`다.
+
+**NMEA 2000**
+선박 전자장비의 CAN 기반 네트워크. IEC 61162-3이며 ISO 11783/J1939 데이터링크를 쓴다. 250kbps, 50노드, 120Ω 종단.
+
+**fast packet**
+NMEA 2000의 큰 메시지 전송. 첫 프레임 6바이트, 연속 프레임 7바이트, 최대 223바이트다.
+
+**NMEA PGN**
+NMEA 2000의 PGN 사전. J1939와 번호 체계를 공유하지만 같은 번호가 같은 의미라는 보장은 없다.

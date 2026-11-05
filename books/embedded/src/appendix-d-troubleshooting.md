@@ -175,3 +175,24 @@ DTC 삭제와 쓰기 서비스의 위험은 9장에서 자세히 다룬다. 이 
 - FreeRTOS API를 ISR에서 쓸 때는 이름에 `FromISR`이 있는지 확인한다. 없으면 잘못된 것이다.
 - Rust에서도 `unsafe`, 논리 오류, 스택 오버플로, 데드락은 남는다. 소유권은 만능이 아니다.
 - ESP32 코드는 사용하는 ESP-IDF/Arduino-ESP32 코어 버전의 TWAI API를 확인한다. v6.x는 `twai_node_*`다.
+
+## D.11 J1939·CANopen·NMEA 2000
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| J1939 PGN이 목적지마다 달라짐 | PDU1의 PS(DA)를 PGN에 포함 | PF < 240인지, PGN low byte | PS를 0으로 지우고 PGN 계산 |
+| J1939 프레임이 안 보임 | 11비트로 송신, 29비트 필터 누락 | `is_extended_id`, CAN ID 상위 비트 | 29비트 확장 ID 사용, 필터 확인 |
+| SPN 값이 8배·40도 틀림 | 해상도·오프셋 누락 | SPN 표의 resolution/offset | `raw*res+offset` 적용 |
+| DM1 SPN/FMI가 엉뚱함 | DTC 오프셋·FMI 비트 순서 | 2바이트 램프 뒤 4바이트 DTC | byte3 하위 5비트=FMI, 상위 3비트=SPN high |
+| TP 메시지가 1패킷 모자람 | 패킷 수 계산 오류 | `ceil(len/7)`, TP.CM byte4 | 0xFF 패딩, 시퀀스 1부터 |
+| J1939 주소 충돌 | 클레임 누락·NAME 비교 오류 | PGN 60928, 250ms | NAME 작은 쪽이 이김, 재클레임 |
+| CANopen SDO 무응답 | NMT Stopped, node ID 불일치 | `0x600+ID`/`0x580+ID`, NMT 상태 | Pre-operational/Operational로 |
+| SDO Abort `0x06020000` | OD에 없는 index | EDS, index/subindex | 객체 존재 여부 확인 |
+| PDO가 안 옴 | 매핑·전송 형식·NMT 상태 | `0x1A00`, transmission type | Operational, 매핑 일치 |
+| 하트비트 끊김 | 주기 0, 케이블, 노드 리셋 | `0x1017`, `0x700+ID` | 주기 설정, 전원·배선 확인 |
+| NMEA PGN이 이상함 | J1939 PGN 사전으로 해석 | NMEA PGN 표, canboat | NMEA 사전으로 디코딩 |
+| fast packet 깨짐 | 시퀀스/프레임 카운터 무시 | 상위 3비트/하위 5비트 | 순서·총 길이 검사 |
+
+- J1939·CANopen·NMEA 2000은 **같은 CAN이라도 문서가 다르다.** DBC·EDS·PGN 표를 섞지 않는다.
+- 실제 차량·선박·설비에서는 NMT 전환·SDO 쓰기·PDO 송신·DM3를 하지 않는다. 진단은 읽기 전용으로 시작한다.
+- 가상 버스에서 먼저 재현하고, 실제 장비는 제조사 문서와 안전 절차를 확인한 뒤 읽기만 한다.

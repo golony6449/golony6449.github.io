@@ -177,3 +177,21 @@
 | 패치 관리 | UN R156 SUMS | OTA 안전·무결성·롤백·RXSWIN | 23 |
 | 사고 대응(IR) | 차량 사고 대응·Fleet 모니터링 | 원격 조치·리콜·업데이트와 연결 | 23 |
 | 침해 가정(assume breach) | 심층 방어·IDS·최소 권한 | CAN은 신뢰 경계 안에서도 인증이 없다고 가정한다 | 23 |
+
+## B.10 CAN 위의 상위 프로토콜
+
+| 웹 개념 | OBD-II | UDS | J1939 | CANopen | NMEA 2000 |
+|---|---|---|---|---|---|
+| 공개 REST API | Mode 01 PID | - | - | SDO | - |
+| 사내 RPC | - | 0x22/0x2E/0x31 | - | SDO | - |
+| 발행/구독 | - | - | PGN broadcast | PDO | PGN broadcast |
+| 스키마 문서 | PID 표 | DID 표 | PGN/SPN 표·DBC | EDS·OD | PGN 표·canboat |
+| 서비스 디스커버리 | - | - | Address Claim(PGN 60928) | Node ID·NMT | Address Claim(PGN 60928) |
+| 우선순위/QoS | - | - | Priority(3비트) | COB-ID 순서 | Priority(3비트) |
+| 큰 payload | ISO-TP | ISO-TP | TP.CM/TP.DT | SDO segmented | fast packet |
+| 에러 응답 | NRC | NRC | DM1(SPN/FMI) | Abort/EMCY | PGN·제조사 정의 |
+| 헬스 체크 | - | TesterPresent(0x3E) | 주기 PGN | 하트비트(0x700+ID) | 주기 PGN |
+| 인증 | - | 0x27/0x29 | - | - | NMEA 인증(장비) |
+| 관련 장 | 7 | 8 | 24 | 25 | 25 |
+
+한 문장으로 줄이면 이렇다. **OBD-II는 공개 진단 REST, UDS는 사내 RPC, J1939는 상용차 pub/sub, CANopen은 객체 사전 기반 REST+이벤트, NMEA 2000은 선박용 표준 pub/sub**이다. 비유는 입구일 뿐이고, 주소 클레임·PGN 사전·NMT 상태처럼 비유가 깨지는 지점을 각 장에서 확인한다.

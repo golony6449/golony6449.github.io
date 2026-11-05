@@ -118,7 +118,7 @@ LIN에는 주기 프레임 외에 두 가지 변형이 있다.
 
 ## 37.4 PID: 6비트 ID + 2비트 패리티
 
-LIN의 frame ID는 6비트다. 그대로 보내지 않고, 2비트 패리티를 붙여 **PID(Protected Identifier)** 로 보낸다. 수신 측은 패리티를 검사해 헤더가 깨졌는지 판단한다.
+LIN의 frame ID는 6비트다. 그대로 보내지 않고, 2비트 패리티를 붙여 **PID(Protected Identifier)** 로 보낸다. 수신 측은 패리티를 검사해 헤더가 깨졌는지 판단한다. 이름이 같지만 OBD-II의 **PID(Parameter ID)** 와는 다른 값이다. OBD-II PID는 진단 항목 번호이고, LIN PID는 헤더에 실리는 frame ID와 패리티의 조합이다.
 
 frame ID의 비트를 `ID0`(LSB)부터 `ID5`(MSB)까지라 하면, 패리티는 다음과 같다.
 

@@ -485,3 +485,74 @@ ESP-IDF를 Rust로 감싼 std 계열 crate. Wi-Fi·HTTP·MQTT·NVS·OTA 같은 �
 
 **Future / waker**
 `async fn`이 만드는 미완료 작업과, 그 작업을 다시 poll하라고 executor에 알리는 핸들. JavaScript의 Promise/이벤트 루프에 대응한다.
+
+## A.9 차량 보안
+
+**위협 모델(threat model)**
+자산·진입점·신뢰 경계·공격자 능력·영향·완화책을 정리하는 작업. "무엇을 지키고, 어디서 들어오며, 무엇을 겹쳐 막을 것인가"를 문서화한다.
+
+**신뢰 경계(trust boundary)**
+한쪽에서 온 데이터를 다른 쪽에서 신뢰하기 시작하는 경계. 차량에서는 텔레매틱스/IVI와 안전-critical 도메인 사이, OBD 포트와 내부 버스 사이가 대표적이다.
+
+**MAC (Message Authentication Code)**
+키를 가진 주체만 만들 수 있는 인증 태그. 무결성과 데이터 출처를 보장하지만, 기밀성(암호화)은 제공하지 않는다.
+
+**HMAC (Hash-based MAC)**
+암호학적 해시(SHA-256 등)와 비밀 키로 만드는 MAC. 이 책의 가상 실습은 HMAC-SHA256을 잘라 쓴다. 실제 SecOC는 AES-128 CMAC을 쓴다.
+
+**CMAC (Cipher-based MAC)**
+블록 암호(AES 등)를 기반으로 만드는 MAC. AUTOSAR SecOC는 AES-128 CMAC을 쓴다.
+
+**신선도 값(freshness value)**
+메시지가 "지금 처음 온 것"인지 확인하는 값. 카운터·타임스탬프·트립 카운터 등으로 만들며, SecOC는 전체 값을 MAC 계산에 넣고 일부만 프레임에 실을 수 있다.
+
+**재전송 공격(replay attack)**
+정상 메시지를 녹음했다가 나중에 그대로 다시 보내는 공격. MAC만으로는 막을 수 없고, 신선도 값이 필요하다.
+
+**SecOC (Secure Onboard Communication)**
+AUTOSAR의 PDU 단위 인증 규격. Authentic I-PDU에 Authenticator(MAC)와 선택적 신선도 값을 붙여 진위·신선도를 검증한다. 기밀성은 범위가 아니다.
+
+**잘라 낸 MAC(truncated MAC)**
+프레임 공간을 아끼기 위해 MAC의 일부 비트만 싣는 것. SecOC Profile 1은 24비트, Profile 3은 28비트를 쓴다. 짧을수록 위조 확률이 커진다.
+
+**게이트웨이(gateway)**
+버스·도메인 사이의 프레임을 라우팅·필터링하는 ECU. 차량 보안에서는 allowlist, rate limit, 진단 방화벽, 로깅의 집행점이 된다.
+
+**도메인 분리(domain separation)**
+파워트레인·섀시·바디·인포테인먼트·텔레매틱스를 별도 버스/영역으로 나누는 설계. 한 영역의 침해가 다른 영역으로 번지는 것을 줄인다.
+
+**IDS (Intrusion Detection System)**
+차량 내부 네트워크의 이상을 탐지하는 시스템. 허용 ID, 주기, 클록 오차, payload 패턴, 전압 파형 등을 본다. 탐지는 차단이 아니다.
+
+**CIDS (Clock-based IDS)**
+주기 메시지의 도착 간격으로 ECU별 클록 오차를 지문처럼 학습해 위조·변조·마스커레이드를 탐지하는 연구. USENIX Security 2016에서 발표되었다.
+
+**CSMS (Cyber Security Management System)**
+UN R155가 요구하는 사이버보안 관리 체계. 위험 기반 프로세스, 거버넌스, 공급망 관리, 사고 탐지·대응, Fleet 모니터링을 포함한다.
+
+**SUMS (Software Update Management System)**
+UN R156가 요구하는 소프트웨어 업데이트 관리 체계. OTA의 안전·보안, 무결성·진위, RXSWIN, 롤백·안전 상태를 포함한다.
+
+**ISO/SAE 21434**
+도로 차량 E/E 시스템의 사이버보안 엔지니어링 표준. 개념·개발·생산·운영·유지·폐기 전 단계의 위험 관리 프로세스를 정의하며, 특정 기술을 강제하지 않는다.
+
+**SecurityAccess (0x27) / Authentication (0x29)**
+UDS의 진단 접근 통제 서비스. 0x27은 시드-키(공유 비밀) 기반 잠금 해제, 0x29는 인증서·도전-응답 기반 인증이다. 이 책은 실차에서 둘 다 보내지 않는다.
+
+**APCE / ACR**
+UDS 0x29 Authentication의 두 가지 개념. APCE는 PKI 인증서 교환, ACR은 사전 설치 키 기반 도전-응답이다.
+
+**RXSWIN**
+UN R156에서 요구하는 소프트웨어 식별자. 어떤 규정 승인에 어떤 소프트웨어가 관련되는지 추적한다.
+
+**V-SOC (Vehicle Security Operations Center)**
+차량 Fleet의 보안 경고·사고를 모니터링하고 대응하는 조직·체계. IDS 경고와 로그가 입력이 된다.
+
+**SBOM (Software Bill of Materials)**
+소프트웨어 구성 요소·버전·의존성 목록. 공급망 투명성과 취약점 추적에 쓴다.
+
+**진단 방화벽(diagnostic firewall)**
+OBD 포트·정비 도구가 접근할 수 있는 ECU·서비스·세션을 제한하는 정책. 누가·어디에·무엇을·언제·기록의 다섯 축으로 설계한다.
+
+**심층 방어(defense in depth)**
+구조(게이트웨이·분리), 인증(SecOC), 감시(IDS), 접근 통제(0x29), 업데이트(R156), 키 관리 등 여러 층을 겹치는 설계 원칙.

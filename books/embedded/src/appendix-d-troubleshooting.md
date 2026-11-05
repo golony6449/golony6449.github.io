@@ -149,3 +149,29 @@ DTC 삭제와 쓰기 서비스의 위험은 9장에서 자세히 다룬다. 이 
 | 값이 `--`로만 보임 | `NO DATA`, 파싱 실패, 수집기 미시작 | `/api/snapshot`, 서버 로그, `010C` 단독 | PID 지원·시동 상태·파서 확인 |
 | 단위가 이상함 | 저장 단위와 표시 단위 혼용 | DB 값, 화면 값, 토글 상태 | 저장은 km/h·°C, 표시에서만 변환 |
 | 재연결이 반복됨 | USB 전원·COM 번호 변경·`UNABLE TO CONNECT` | 재연결 로그, `ATDPN`, 장치 관리자 | 백오프, 포트 탐색, 전원·케이블 점검 |
+
+## D.10 펌웨어·FreeRTOS·Rust
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| `Guru Meditation Error`/HardFault | 스택 오버플로, NULL 역참조, 정렬 위반, ISR 실수 | 백트레이스, `uxTaskGetStackHighWaterMark`, map 파일 | 스택 확대, 큰 버퍼를 정적으로, 포인터 검사 |
+| 일정 시간마다 리셋 | Task Watchdog 타임아웃, 태스크 굶주림, 블로킹 | 리셋 원인, TWDT 로그, 태스크별 하트비트 | 블로킹 분할, 우선순위 조정, 정상 완료 지점에서 리셋 |
+| `malloc` 실패/힙 감소 | 조각화, 해제 누락, 큰 JSON/TLS 버퍼 | 힙 사용량, 할당 크기·횟수, `heap_caps` | 고정 풀, 부팅 시 할당, 버퍼 축소 |
+| `RX_QUEUE_FULL`·프레임 유실 | 소비 태스크가 느림, 큐가 작음, 필터가 넓음 | `rx_missed_count`, `app_drops`, 큐 길이 | 수신 우선순위↑, `rx_queue_len`↑, 필터 축소 |
+| 특정 태스크가 안 돎 | 우선순위 starvation, 뮤텍스 대기, 무한 루프 | `vTaskGetRunTimeStats`, 스택, 뮤텍스 보유 시간 | 우선순위·주기 조정, 임계 구역 축소 |
+| Bus-Off가 반복됨 | 배선·종단·비트레이트·전원 | TEC/REC, `bus_error_count`, 파형 | 배선·종단·속도 확인, 복구는 증상 완화일 뿐 |
+| 복구 후 통신이 안 됨 | `BUS_RECOVERED` 전 `twai_start()`, TX 큐 유실 | 경보 순서, 상태 로그 | 복구 완료 후 start, 요청 재큐 |
+| Deep sleep 전류가 큼 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 전압 | 불필요 부품 제거, `RS` HIGH, wake source 최소화 |
+| CAN 활동으로 안 깨움 | 프레임이 짧아 RTC GPIO가 놓침, ext0 레벨 설정 오류 | 벤치에서 프레임 폭·핀 파형, `ext0` 설정 | 타이머 wake, 래치/펄스 확장, wake 지원 트랜시버 검토 |
+| 깨어난 뒤 CAN 응답 없음 | TWAI 재초기화 누락, 트랜시버가 standby | 부팅 로그, `RS` 핀, `twai_start()` | sleep 시퀀스 역순으로 재초기화 |
+| `volatile` 공유 변수 값이 반쪽 | 원자성 없음, 다중 변수 스냅샷 | 32비트 값의 상·하위 바이트, 로그 | `_Atomic`, 인터럽트 차단, 큐 |
+| `xQueueSendFromISR` 후 반응 지연 | `portYIELD_FROM_ISR` 누락 | ISR 코드, `pxHigherPriorityTaskWoken` | ISR 끝에서 yield 호출 |
+| Rust 빌드가 target을 못 찾음 | Xtensa 타깃 미설치, espup 미실행 | `rustup target list`, `espup` 로그 | `espup install`, target 지정, 환경 변수 |
+| Rust `no_std` 링크 오류 | `#[panic_handler]` 없음, allocator 없음 | 링커 오류 메시지 | 패닉 핸들러 추가, `alloc` 대신 고정 배열 |
+| `esp-hal` API가 깨짐 | unstable API, 버전 불일치 | `Cargo.lock`, 마이그레이션 가이드 | 버전 고정, 릴리스 노트 확인 |
+| Embassy 태스크가 다른 일을 막음 | 긴 계산·블로킹 호출 | 실행 시간, `yield_now` 유무 | 작은 단위로 분할, 별도 executor/인터럽트 |
+
+- 펌웨어 문제는 "코드가 틀렸다"보다 **스택·큐·우선순위·전원**이 원인인 경우가 많다. 리셋 원인과 카운터를 먼저 본다.
+- FreeRTOS API를 ISR에서 쓸 때는 이름에 `FromISR`이 있는지 확인한다. 없으면 잘못된 것이다.
+- Rust에서도 `unsafe`, 논리 오류, 스택 오버플로, 데드락은 남는다. 소유권은 만능이 아니다.
+- ESP32 코드는 사용하는 ESP-IDF/Arduino-ESP32 코어 버전의 TWAI API를 확인한다. v6.x는 `twai_node_*`다.

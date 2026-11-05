@@ -31,13 +31,16 @@ jobs:
           "$RUNNER_TEMP/mdbook/mdbook" --version
 
       - name: Build book
-        run: mdbook build books/embedded
+        run: |
+          mdbook build books/embedded
+          mdbook build books/sky-scanner
 
       - name: Assemble site
         run: |
           mkdir -p _site
           cp index.html _site/index.html
           cp -r books/embedded/book _site/embedded
+          cp -r books/sky-scanner/book _site/sky-scanner
           touch _site/.nojekyll
 
       - name: Upload Pages artifact

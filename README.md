@@ -5,6 +5,7 @@
 ## 책
 
 - [웹 개발자를 위한 임베디드 입문](https://golony6449.github.io/embedded/) — 원본: `books/embedded/`
+- [하늘을 엿듣는 웹 개발자: 에어밴드 수신기 제작기](https://golony6449.github.io/sky-scanner/) — 원본: `books/sky-scanner/`
 
 ## 저장소 구조
 
@@ -12,6 +13,7 @@
 index.html                  사이트 루트(책 목록)
 books/embedded/book.toml    mdBook 설정
 books/embedded/src/         책 원고
+books/sky-scanner/          에어밴드 수신기 제작기(같은 구조)
 .github/workflows/pages.yml GitHub Pages 배포 워크플로
 .ds-tmp/                    작업용 임시 폴더(커밋하지 않음)
 ```
@@ -38,8 +40,8 @@ mdBook을 설치하지 않았다면 릴리스 바이너리를 받아 쓰거나 `
 
 `main` 브랜치에 푸시하면 `.github/workflows/pages.yml`이 실행됩니다.
 
-1. mdBook 0.5.4를 내려받아 `books/embedded`를 빌드합니다.
-2. 루트의 `index.html`과 빌드 결과(`book/`)를 `_site/`로 합칩니다. 책은 `_site/embedded/`로 들어갑니다.
+1. mdBook 0.5.4를 내려받아 `books/embedded`와 `books/sky-scanner`를 빌드합니다.
+2. 루트의 `index.html`과 빌드 결과(`book/`)를 `_site/`로 합칩니다. 책은 `_site/embedded/`와 `_site/sky-scanner/`로 들어갑니다.
 3. `actions/upload-pages-artifact`와 `actions/deploy-pages`로 GitHub Pages에 배포합니다.
 
 사이트 주소는 <https://golony6449.github.io>이고, 책은 <https://golony6449.github.io/embedded/>에 놓입니다.

@@ -13,10 +13,11 @@
 - [4장 FM에서 에어밴드로: 처음 들은 관제 교신](04-airband.md)
 - [5장 창은 하나: 동시에 되는 것과 안 되는 것](05-one-window.md)
 - [6장 비행기는 어디서 오는가: ADS-B, 노선, GPS](06-aircraft-data.md)
+- [7장 밤사이 만든 수신기: AI 셋이 일하는 방식](07-receiver-build.md)
 
 # 3부. 로컬 모델
 
-- [7장 받아 적기 대신 교차 검증](07-stt-candidates.md)
+- [8장 받아 적기 대신 교차 검증](08-stt-candidates.md)
 
 ---
 

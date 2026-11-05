@@ -19,8 +19,8 @@
 | 요청 ID/트레이스 ID | PID 에코, DID, CAN ID | 응답을 요청과 매칭해야 한다 | 3, 5, 7 |
 | 응답 스키마 | PID/DID 정의표, OBDb | 스키마가 데이터 밖에 있다 | 7, 8 |
 | 개인정보 마스킹 | VIN 해시/별칭 | 로그·토픽·공개 저장소에서 제거 | 9, 10 |
-| 서버 푸시/SSE | MQTT 구독, BLE notify/indicate | CCCD를 켜야 notify가 온다 | 10 |
-| 주기적 폴링 | MQTT pub/sub, CoAP observe | 배터리와 트래픽에 불리하다 | 10 |
+| 서버 푸시/SSE | MQTT 구독, BLE notify/indicate | CCCD를 켜야 notify가 온다 | 10, 19 |
+| 주기적 폴링 | MQTT pub/sub, CoAP observe | 배터리와 트래픽에 불리하다 | 10, 19 |
 | 페이지네이션 | 레지스터 블록 읽기 | 최대 길이와 타임아웃을 정해야 한다 | 3, 10 |
 
 ## B.2 상태와 실행
@@ -135,3 +135,18 @@
 | Prometheus/Grafana | InfluxDB/Grafana | 카디널리티·보존 정책을 주의한다 | 17 |
 | 개인정보 마스킹 | VIN·GPS 제거/별칭 | 로그 원본에 섞여 있을 수 있다 | 9, 17 |
 | 브라우저 지원 매트릭스 | Web Serial/Bluetooth 지원 | Safari 미지원, HTTPS·사용자 제스처 | 15 |
+
+## B.8 TypeScript/Node.js 프로젝트
+
+| 웹 개념 | 임베디드 대응 | 핵심 차이 | 관련 장 |
+|---|---|---|---|
+| `pyserial` | `serialport` | `data` 이벤트의 청크는 원하는 크기로 오지 않는다 | 7, 18 |
+| Python 타입 힌트·`Protocol` | TypeScript `interface`·판별 유니온 | 타입은 런타임에 지워진다. 경계에서 검증한다 | 18 |
+| `uv`/`pip` | `npm`/`package.json` | 잠금 파일·스크립트·Node 버전 조건이 다르다 | 18 |
+| Flask 라우트 | `node:http` 라우팅 | 프레임워크 없이 URL·메서드를 직접 분기한다 | 7, 19 |
+| WebSocket | SSE(`EventSource`) | SSE는 단방향, 재연결이 내장, HTTP/1.1 연결 수 제한 | 19 |
+| 응답 버퍼·큐 | `write()` 백프레셔 | `false`면 `drain`까지 기다리거나 드롭한다 | 19 |
+| SQLite ORM | `node:sqlite` `DatabaseSync` | 동기 API, WAL·배치·보존 정책을 직접 다룬다 | 17, 19 |
+| React/Vue 상태 | Canvas 게이지·차트 | DOM 대신 픽셀을 그린다. 접근성 대체 수단을 둔다 | 19 |
+| Jest/Vitest | `node:test` | 가짜 전송 계층·`:memory:` SQLite로 하드웨어 없이 시험 | 16, 19 |
+| TypeScript 빌드 | Node 타입 제거 | `tsc --noEmit`으로 타입 검사, `enum` 등은 실행 불가 | 18 |

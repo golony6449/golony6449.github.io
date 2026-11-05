@@ -379,3 +379,32 @@ CAN 비트 시간에서 수신기가 레벨을 읽는 지점. 보통 PS1이 끝�
 
 **Error Active / Error Passive**
 CAN 노드의 오류 상태. TEC/REC ≤127이면 Active(6 dominant 오류 플래그), 127 초과면 Passive(6 recessive)다.
+
+## A.7 TypeScript·Node.js
+
+**타입 제거(type stripping)**
+Node.js가 TypeScript 파일에서 타입 문법만 지우고 JavaScript로 실행하는 기능. Node 24.12부터 안정. 타입 검사는 하지 않으며 `tsconfig.json`을 읽지 않는다.
+
+**`erasableSyntaxOnly`**
+TypeScript 컴파일러 옵션. `enum`, 생성자 매개변수 프로퍼티처럼 런타임 코드를 만들어 내는 문법을 오류로 만든다. Node의 타입 제거 모드에서 실행 가능한 코드만 남기기 위해 쓴다.
+
+**판별 유니온(discriminated union)**
+공통 필드(예: `kind`)의 값으로 여러 타입 중 하나를 구분하는 TypeScript 타입. `ElmResponse`의 `ok`/`no-data`/`error`처럼 응답 종류를 안전하게 나눌 때 쓴다.
+
+**`serialport`**
+Node.js에서 시리얼 포트를 여는 npm 패키지. `SerialPort`, `data` 이벤트, `write`/`drain`, `SerialPortMock`을 제공한다. v13은 Node 20 이상을 요구한다.
+
+**`socketcan`**
+Linux SocketCAN을 Node.js에서 쓰는 npm 패키지. `createRawChannel`, `onMessage`, `send`, `start/stop`을 제공한다. Linux 전용이며 Windows에서는 쓸 수 없다.
+
+**SSE(Server-Sent Events)**
+HTTP 응답을 `text/event-stream`으로 유지하며 서버에서 클라이언트로 이벤트를 보내는 방식. 단방향이며, 브라우저의 `EventSource`가 재연결을 담당한다.
+
+**`EventSource`**
+SSE를 구독하는 브라우저 API. `retry:`로 재연결 간격을 정하고, `id:`/`Last-Event-ID`로 마지막 이벤트를 추적할 수 있다. HTTP/1.1에서는 브라우저+도메인당 연결 수 제한(6개)을 고려한다.
+
+**백프레셔(backpressure)**
+생산자가 소비자보다 빠를 때 데이터를 밀어 넣지 않고 기다리거나 버리는 정책. Node HTTP에서는 `response.write()`가 `false`를 돌려주면 `drain`까지 기다린다. 이 책의 대시보드는 느린 SSE 클라이언트에 중간 표본을 버리고 최신값만 보낸다.
+
+**`node:sqlite`**
+Node.js에 내장된 SQLite 모듈. `DatabaseSync`로 동기 연결을 열고 `exec`, `prepare`, `run`, `all`을 쓴다. Node 24.15 기준 Stability 1.2(Release candidate)다.

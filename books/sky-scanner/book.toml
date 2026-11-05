@@ -1,0 +1,16 @@
+[book]
+title = "하늘을 엿듣는 웹 개발자: 에어밴드 수신기 제작기"
+description = "RTL-SDR 동글 하나로 관제 교신을 듣고, 지도와 자막을 붙이기까지의 설계·계획·구현 일대기"
+authors = ["Park SeongHeum"]
+language = "ko"
+src = "src"
+
+[output.html]
+site-url = "https://golony6449.github.io/sky-scanner/"
+git-repository-url = "https://github.com/golony6449/golony6449.github.io"
+edit-url-template = "https://github.com/golony6449/golony6449.github.io/edit/main/books/sky-scanner/src/{path}"
+default-theme = "light"
+preferred-dark-theme = "navy"
+
+[output.html.search]
+enable = true

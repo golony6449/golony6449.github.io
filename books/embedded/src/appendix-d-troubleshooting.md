@@ -161,8 +161,8 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 | 특정 태스크가 안 돎 | 우선순위 starvation, 뮤텍스 대기, 무한 루프 | `vTaskGetRunTimeStats`, 스택, 뮤텍스 보유 시간 | 우선순위·주기 조정, 임계 구역 축소 |
 | Bus-Off가 반복됨 | 배선·종단·비트레이트·전원 | TEC/REC, `bus_error_count`, 파형 | 배선·종단·속도 확인, 복구는 증상 완화일 뿐 |
 | 복구 후 통신이 안 됨 | `BUS_RECOVERED` 전 `twai_start()`, TX 큐 유실 | 경보 순서, 상태 로그 | 복구 완료 후 start, 요청 재큐 |
-| Deep sleep 전류가 큼 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 전압 | 불필요 부품 제거, `RS` HIGH, wake source 최소화 |
-| CAN 활동으로 안 깨움 | 프레임이 짧아 RTC GPIO가 놓침, ext0 레벨 설정 오류 | 벤치에서 프레임 폭·핀 파형, `ext0` 설정 | 타이머 wake, 래치/펄스 확장, wake 지원 트랜시버 검토 |
+| Deep sleep 전류가 큼 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 전압 | 불필요 부품 제거, `RS` HIGH, 깨우기 원천 최소화 |
+| CAN 활동으로 안 깨움 | 프레임이 짧아 RTC GPIO가 놓침, ext0 레벨 설정 오류 | 벤치에서 프레임 폭·핀 파형, `ext0` 설정 | 타이머 깨우기, 래치/펄스 확장, wake 지원 트랜시버 검토 |
 | 깨어난 뒤 CAN 응답 없음 | TWAI 재초기화 누락, 트랜시버가 standby | 부팅 로그, `RS` 핀, `twai_start()` | sleep 시퀀스 역순으로 재초기화 |
 | `volatile` 공유 변수 값이 반쪽 | 원자성 없음, 다중 변수 스냅샷 | 32비트 값의 상·하위 바이트, 로그 | `_Atomic`, 인터럽트 차단, 큐 |
 | `xQueueSendFromISR` 후 반응 지연 | `portYIELD_FROM_ISR` 누락 | ISR 코드, `pxHigherPriorityTaskWoken` | ISR 끝에서 yield 호출 |
@@ -233,14 +233,33 @@ DTC 삭제와 쓰기 서비스의 위험은 11장에서 자세히 다룬다. 이
 
 | 증상 | 원인 후보 | 확인 방법 | 조치 |
 |---|---|---|---|
-| deep sleep 전류가 데이터시트보다 크다 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 | 불필요 부품 제거, standby, wake source 최소화 |
+| deep sleep 전류가 데이터시트보다 크다 | LDO·USB-UART·LED, 트랜시버 standby 미설정, RTC 주변장치 | 전원 회로 분리 측정, `RS` 핀 | 불필요 부품 제거, standby, 깨우기 원천 최소화 |
 | 잠들지 않는다 | Wi-Fi/BT 미종료, 열린 소켓, 태스크 블로킹 | `esp_sleep_start()` 전 로그, 전류 | 무선 종료, 태스크 정리, sleep API 확인 |
-| 타이머 wake가 안 된다 | 단위(µs) 오류, 0 설정, sleep 모드 불일치 | 설정값, wake cause | `esp_sleep_enable_timer_wakeup(us)` 확인 |
-| ext0/ext1 wake가 안 된다 | RTC GPIO 아님(GPIO21 등), 레벨 오류, ext1 모드 | 핀 목록, `esp_sleep_get_wakeup_cause()` | RTC GPIO로 변경, 레벨·모드 확인 |
-| 깨어나자마자 다시 잔다 | wake 핀이 계속 활성, wake source 미해제 | 핀 전압, wake 설정 | `rtc_gpio_deinit()`, wake source 해제, 디바운스 |
-| CAN 프레임으로 못 깨운다 | TWAI는 wake 원천 아님, 펄스 폭 부족, GPIO21 | 벤치 파형, wake cause | 타이머 wake, 래치·펄스 확장, wake 트랜시버 |
+| 타이머 깨우기가 안 된다 | 단위(µs) 오류, 0 설정, sleep 모드 불일치 | 설정값, wake cause | `esp_sleep_enable_timer_wakeup(us)` 확인 |
+| ext0/ext1 깨우기가 안 된다 | RTC GPIO 아님(GPIO21 등), 레벨 오류, ext1 모드 | 핀 목록, `esp_sleep_get_wakeup_cause()` | RTC GPIO로 변경, 레벨·모드 확인 |
+| 깨어나자마자 다시 잔다 | wake 핀이 계속 활성, 깨우기 원천 미해제 | 핀 전압, 깨우기 설정 | `rtc_gpio_deinit()`, 깨우기 원천 해제, 디바운스 |
+| CAN 프레임으로 못 깨운다 | TWAI는 깨우기 원천 아님, 펄스 폭 부족, GPIO21 | 벤치 파형, wake cause | 타이머 깨우기, 래치·펄스 확장, wake 트랜시버 |
 | 배터리가 빨리 준다 | 평균 전류 과다, Wi-Fi 재연결 반복, 저전압 차단 없음 | 전류 로그, 하트비트, 전압 | 활성 시간·주기·송신 전력 축소, 차단 |
 | 브라운아웃 리셋이 반복된다 | 3.3V 레일 강하, 부하·배선·커넥터 | 리셋 원인, 전압 파형 | 전원 설계, 디커플링, 부하 분리 |
 | 깨어난 뒤 CAN이 안 된다 | TWAI 재초기화 누락, 트랜시버 standby | 부팅 로그, `RS` 핀 | sleep 시퀀스 역순으로 재초기화 |
-| deep sleep 뒤 시각이 틀린다 | RTC 시각 미유지, SNTP 미실행 | 로그 시각, SNTP 결과 | wake 후 SNTP, TLS 전 시각 확인 |
+| deep sleep 뒤 시각이 틀린다 | RTC 시각 미유지, SNTP 미실행 | 로그 시각, SNTP 결과 | 깨우기 후 SNTP, TLS 전 시각 확인 |
 | OTA 중 sleep에 들어간다 | 절전 태스크가 OTA를 모름 | OTA·sleep 로그 | OTA 중 sleep 금지 플래그 |
+
+## D.15 신호 처리·데이터 품질
+
+| 증상 | 원인 후보 | 확인 방법 | 조치 |
+|---|---|---|---|
+| 대시보드에 0°C·0rpm이 뜬다 | 결측을 0으로 채움, `NO DATA`를 숫자로 변환 | 원본 응답, `quality` 플래그 | `null`+`missing`, 화면에는 `--` |
+| 오일 온도가 항상 -40°C다 | PID 5C 미구현·센서 없음, `00`을 정상값으로 해석 | 같은 값 반복, 다른 온도 PID와 비교 | 무효값으로 표시, PID 제외 |
+| 외기 온도가 51°C에 고정된다 | PID 46 무효값·고정값 | 시동·주행 중 변화 여부 | `invalid`, 다른 소스와 교차 확인 |
+| 흡기압이 255kPa에서 안 올라간다 | 1바이트 PID 포화(`0xFF`), 과급압을 표준 PID로 못 읽음 | 부스트 실제값과 비교 | 범위 끝 표시, 제조사 PID 검토 |
+| 지원되는 PID가 항상 0이다 | ECU가 더미 값을 반환, 센서 없음 | 지원 비트마스크와 값 분포 | 대시보드에서 제외, `invalid` |
+| 응답 길이가 규격과 다르다 | 제조사 구현 차이, 짧은 응답 | 원시 바이트 길이, PID별 기대 길이 | 길이를 고정하지 말고 실제 길이로 파싱 |
+| 10Hz로 읽었는데 값이 1초마다만 바뀐다 | ECU 내부 갱신 1Hz, PID 1F의 1초 해상도 | 값 변화 시각, ECU 문서 | 폴링 주기를 낮추거나 `확인 필요` 표시 |
+| 빠른 진동이 느린 주기로 보인다 | 에일리어싱 | 샘플링 주파수와 신호 주파수 계산 | 샘플링 속도 상향, 안티에일리어싱 |
+| 두 로그의 시간이 수 초 어긋난다 | 시계 드리프트, NTP 미동기, 타임존 | `sync_error_ms`, 마지막 동기화 | UTC·단조 시계 분리, 동기화 오차 기록 |
+| 재부팅 후 시간 계산이 음수다 | 단조 시계 기준점 초기화, 벽시계 점프 | 부팅 ID, `monotonic` 값 | 세션 ID와 함께 저장, 벽시계는 경과에 쓰지 않음 |
+| 리샘플 후 값이 계단처럼 보인다 | 최근값 유지(ffill) | `age_s`, 원본 타임스탬프 | 허용 나이, `stale` 표시, 짧은 구간만 보간 |
+| 필터 후 알람이 늦다 | 필터 지연(τ, (N-1)/2) | 원본과 필터 값의 교차상관 | 지연 예산, 알람은 원본·지속 시간으로 |
+| 이상 탐지가 정상 값을 잡는다 | 추세·비정규 분포, 작은 MAD, 워밍업 부족 | 롤링 창, MAD, 임계값 | 창·임계값 조정, `invalid`는 검토용 |
+| 결측률이 갑자기 오른다 | USB 끊김, Bus-Off, 전원, 어댑터 | 드롭 카운터, 재연결 로그, 전원 | 배선·전원·어댑터 점검, 결측 자체를 알람으로 |

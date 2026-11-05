@@ -638,7 +638,7 @@ def replay(path: str, channel: str = "vcan0", speed: float = 1.0) -> int:
 - python-can virtual 위에 가짜 ECU를 만들면 9장의 요청·응답·ISO-TP 조립을 차 없이 시험할 수 있다.
 - ELM327-emulator는 AT 명령과 ELM327 응답 계층을 흉내 낸다. `scenario car`는 Toyota 시나리오이므로 쏘렌토 값으로 오해하지 않는다.
 - 기록 로그를 재생하면 같은 프레임을 반복 시험할 수 있다. 재생은 vcan/벤치에서만 하고 실제 차량에 보내지 않는다.
-- 이 장의 가상 버스는 29.9절의 SecOC 흉내 내기(카운터·HMAC 검증)와 IDS 확장 실습에도 쓴다. 실제 차량에는 송신하지 않는다.
+- 이 장의 가상 버스는 32.9절의 SecOC 흉내 내기(카운터·HMAC 검증)와 IDS 확장 실습에도 쓴다. 실제 차량에는 송신하지 않는다.
 
 ## 연습 문제
 

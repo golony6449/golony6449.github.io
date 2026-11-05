@@ -405,6 +405,12 @@ for (;;) {
 
 측정 도구는 GPIO 토글 + 로직 분석기, `esp_timer_get_time()`, RTOS의 실행 시간 통계(`vTaskGetRunTimeStats`) 등이다. GPIO 토글은 "코드 어디서 시간이 걸리는지"를 오실로스코프/로직 분석기로 바로 보여 준다.
 
+### 샘플링 주기와 필터의 시간 예산
+
+주기 태스크에서 센서를 읽고 필터를 적용하면, 제어 주기 안에 **읽기 + 필터 + 전송**이 모두 들어가야 한다. 필터의 표본당 연산이 작아도, 창 크기·나눗셈·정렬이 늘어나면 WCET가 변한다. 30장의 고정소수점 EMA는 메모리 O(1)이고 표본당 곱셈 1·나눗셈 1이라 이런 예산에 넣기 쉽다. 반대로 이동 평균은 합계 오버플로와 창 크기만큼의 메모리를, 중앙값은 정렬 비용을 확인해야 한다.
+
+또한 주기 태스크의 **지터**는 샘플링 간격을 흔든다. `vTaskDelayUntil()`로 주기를 맞춰도 ISR·우선순위·플래시 쓰기 때문에 표본 간격이 달라진다. 타임스탬프를 찍고 실제 `dt`로 필터 계수를 계산하거나, 고정 `dt`를 쓸 때는 지터 한계를 문서화한다. 샘플링·타임스탬프·정렬은 29장에서 더 자세히 다룬다.
+
 ### 상태 기계와 `await`
 
 13.5절의 OBD 상태 기계는 웹의 `async/await`와 같은 역할을 한다. 다른 점은 **런타임이 없다**는 것이다. `await`는 컴파일러가 상태 기계로 바꾸고 이벤트 루프가 재개해 주지만, C에서는 상태와 전이를 직접 쓴다.
@@ -425,43 +431,10 @@ IDLE ──주기 도달──→ SEND ──→ WAIT_LINE ──줄 완성─�
 
 가장 흔한 실수는 **ISR에서 워치독을 리셋**하는 것이다. ISR은 타이머로 계속 돌 수 있으므로, 메인 루프가 죽어도 워치독은 "살아 있다"고 착각한다. 워치독은 **모든 핵심 작업이 정상적으로 완료됐을 때** 리셋해야 한다.
 
-ESP-IDF에는 Task Watchdog Timer(TWDT)가 있다. 다음 API로 태스크를 감시한다.
-
-- `esp_task_wdt_init(&config)`: `timeout_ms`, `idle_core_mask`, `trigger_panic` 설정
-- `esp_task_wdt_add(NULL)`: 현재 태스크를 감시 대상에 추가
-- `esp_task_wdt_reset()`: 현재 태스크가 정상 동작 중임을 알림
-- `esp_task_wdt_delete(NULL)`: 감시 해제
-
-```c
-#include "esp_err.h"
-#include "esp_task_wdt.h"
-
-void app_main(void) {
-    esp_task_wdt_config_t cfg = {
-        .timeout_ms = 5000,
-        .idle_core_mask = 0,
-        .trigger_panic = true,
-    };
-    esp_err_t err = esp_task_wdt_init(&cfg);
-    if (err == ESP_ERR_INVALID_STATE) {
-        err = esp_task_wdt_reconfigure(&cfg);   /* 기본 설정으로 이미 초기화된 경우 */
-    }
-    ESP_ERROR_CHECK(err);
-    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
-
-    for (;;) {
-        do_can_work();
-        esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-```
+ESP-IDF에는 Task Watchdog Timer(TWDT)가 있다. `esp_task_wdt_init(&config)`로 시간·동작을 정하고, `esp_task_wdt_add(NULL)`로 현재 태스크를 감시 대상에 추가한 뒤, 일이 끝난 지점에서 `esp_task_wdt_reset()`을 호출한다. 부팅 시 이미 초기화된 경우 `esp_task_wdt_reconfigure()`를 쓰고, `esp_task_wdt_reset()`을 ISR에서 호출하지 않는다. 설정·코드·긴 작업 처리까지는 21.2절에서 자세히 다룬다.
 
 - `trigger_panic = true`면 타임아웃 시 패닉과 리셋이 일어난다. 기본 동작은 경고와 백트레이스만 남기는 것이다(설정에 따라 다름).
-- ESP-IDF 설정에 따라 TWDT가 부팅 시 이미 초기화되어 있을 수 있다. 이때 `esp_task_wdt_init()`는 `ESP_ERR_INVALID_STATE`를 돌려주므로, `esp_task_wdt_reconfigure()`로 설정을 바꾼다.
-- 모든 감시 대상 태스크가 각자 `esp_task_wdt_reset()`을 호출해야 한다. 한 태스크라도 굶으면 타임아웃이다.
-- `esp_task_wdt_reset()`을 ISR에서 호출하지 않는다. TWDT는 태스크 문맥을 전제로 한다.
-- 타임아웃은 "가장 긴 정상 작업"보다 길게 잡는다. 플래시 지우기·OTA처럼 긴 작업은 별도로 `esp_task_wdt_reconfigure()`를 쓰거나 감시에서 잠시 빼는 방법을 검토한다.
+- 타임아웃은 "가장 긴 정상 작업"보다 길게 잡는다. 플래시 지우기·OTA처럼 긴 작업은 21.2절처럼 별도로 다룬다.
 - TWDT와 별도로 **Interrupt Watchdog(IWDT)**가 있다. 인터럽트가 너무 오래 비활성화되거나 높은 우선순위 ISR이 오래 걸릴 때 리셋한다. ISR을 짧게 유지해야 하는 또 하나의 이유다.
 
 워치독은 "코드를 고쳐 주는" 장치가 아니다. 리셋이 반복되면 리셋 원인을 로그에 남기고(17.8절), 스택 오버플로·블로킹·우선순위 starvation을 찾아야 한다. TWDT/IWDT의 차이, 부팅 카운터·안전 모드, core dump까지는 21장에서 더 깊게 다룬다.

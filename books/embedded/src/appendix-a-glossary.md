@@ -93,6 +93,51 @@ TTL UART 등 단일 종단 신호의 기준. 접지가 없으면 기준이 떠�
 **푸시풀(push-pull)**
 high와 low를 모두 능동적으로 구동하는 출력 방식. SPI가 쓴다.
 
+**전압(voltage) / 전류(current) / 저항(resistance)**
+전압은 두 점의 전위차(V), 전류는 전하의 흐름(A), 저항은 전류를 방해하는 정도(Ω)다. 옴의 법칙 `V = I × R`, 전력 `P = V × I`가 기본이다.
+
+**분압(voltage divider)**
+저항 두 개를 직렬로 두고 중간 전압을 뽑는 회로. `V_out = V_in × R2 / (R1 + R2)`다. ADC 입력 범위를 넘는 전압을 낮출 때 쓴다.
+
+**플로팅(floating)**
+입력 핀의 전압이 정해지지 않은 상태. 노이즈를 받아 HIGH/LOW가 제멋대로 읽히므로 풀업·풀다운으로 기준을 정한다.
+
+**채터링(chattering) / 디바운스(debounce)**
+기계식 접점이 붙었다 떨어졌다를 반복하는 현상과, 일정 시간 같은 값이 유지될 때만 입력을 확정하는 처리. 소프트웨어 타이머나 RC 필터를 쓴다.
+
+**ADC(Analog-to-Digital Converter)**
+전압을 숫자로 바꾸는 변환기. `N`비트면 `2^N` 단계이고, 기준 전압과 분해능이 정확도를 결정한다.
+
+**기준 전압(V_ref)**
+ADC가 full scale로 보는 전압. ESP32는 내부 기준이 명목 1.1V이고, 감쇠로 측정 범위를 넓힌다.
+
+**분해능(resolution)**
+구분할 수 있는 최소 단위. 12비트 ADC는 4096단계, 3.3V 기준에서 1LSB가 약 0.806mV다.
+
+**PWM(Pulse Width Modulation)**
+일정 주기로 HIGH/LOW를 반복해 평균 전압을 만드는 방식. `V_avg = V_supply × duty`다.
+
+**듀티(duty)**
+PWM 한 주기에서 HIGH인 비율. 서보는 듀티보다 1~2ms 펄스 폭이 중요하다.
+
+**레벨 시프터(level shifter)**
+3.3V와 5V처럼 전압이 다른 논리 신호를 변환하는 회로·IC. 5V CMOS의 `VIH`는 3.5V라 3.3V 출력으로 직접 구동할 수 없다.
+
+**load dump**
+발전기가 배터리를 충전하는 중 연결이 끊길 때 생기는 큰 과도 전압. 12V 차량에서 억제 시 35~40V, 억제 없이 79~101V 수준으로 알려져 있다.
+
+**TVS(Transient Voltage Suppressor)**
+과도 전압을 정해진 수준으로 클램프하는 소자. 대기 전압·클램프 전압·에너지를 데이터시트로 계산한다.
+
+**역극성 보호(reverse polarity protection)**
+배터리 극성을 반대로 연결했을 때 뒤쪽 회로를 보호하는 회로. 이상 다이오드·MOSFET·쇼트키 다이오드를 쓴다.
+
+**AEC-Q100**
+자동차용 IC의 신뢰성 인증. Grade 0(−40~150°C)부터 Grade 3(−40~85°C)까지 온도 등급이 있다.
+
+**CAN 트랜시버**
+MCU의 단일 종단 논리 신호와 CAN 버스의 차동 신호를 변환하는 IC. 전원 변환·과도 보호·종단을 대신하지 않는다.
+
 **I2C**
 SDA/SCL 두 선의 동기·오픈 드레인 버스. 7비트 주소로 장치를 구분하고 ACK/NACK로 응답한다.
 
@@ -130,13 +175,22 @@ CAN의 송신/수신 오류 카운터. Error Active ≤127, Error Passive >127, 
 CAN 노드가 오류 누적으로 버스에서 스스로 빠지는 상태. 128번의 11비트 recessive를 본 뒤 복구를 시도한다.
 
 **CAN FD**
-페이로드를 최대 64바이트까지 늘리고 데이터 구간을 빠르게 전환하는 CAN 확장. FDF 비트, CRC 17/21, RTR 없음이 특징이다.
+페이로드를 최대 64바이트까지 늘리고 데이터 구간을 빠르게 전환하는 CAN 확장. FDF 비트, CRC 17/21, RTR 없음이 특징이다. DLC 9~15는 12·16·20·24·32·48·64바이트를 뜻하며, ISO 11898-1:2015와 Bosch 1.0 비ISO FD는 호환되지 않는다.
+
+**FDF(FD Format)**
+CAN FD 프레임임을 나타내는 제어 필드 비트. recessive면 FD, dominant면 클래식 프레임이다. Bosch 1.0에서는 EDL이라고 불렀다.
+
+**ESI(Error State Indicator)**
+CAN FD 프레임에서 송신 노드의 오류 상태를 알리는 비트. dominant는 Error Active, recessive는 Error Passive다.
+
+**TDC(Transmitter Delay Compensation)**
+CAN FD의 고속 데이터 구간에서 트랜시버 지연을 측정해 샘플 포인트를 보정하는 기능.
 
 **BRS(Bit Rate Switch)**
-CAN FD에서 데이터 구간만 더 빠른 비트레이트로 전환하는 기능.
+CAN FD에서 데이터 구간만 더 빠른 비트레이트로 전환하는 기능. recessive면 전환하고, CRC delimiter에서 중재 비트레이트로 돌아온다.
 
 **ISO-TP(ISO 15765-2)**
-8바이트를 넘는 CAN 메시지를 SF/FF/CF/FC로 나눠 주고받는 전송 계층.
+8바이트를 넘는 CAN 메시지를 SF/FF/CF/FC로 나눠 주고받는 전송 계층. 2016 개정은 CAN FD를 지원하며, TX_DL(8/12/16/20/24/32/48/64)과 SF escape(`00 <SF_DL>`)를 쓴다.
 
 **J1939**
 29비트 CAN을 쓰는 트럭·버스·건설기계용 상위 프로토콜. PGN, 소스 주소, 전송 프로토콜을 쓴다.
@@ -302,7 +356,7 @@ BLE 특성의 notify/indicate를 켜는 디스크립터. 이걸 켜지 않아 �
 산업용 사실상 표준 프로토콜. RTU(바이너리, CRC), ASCII(hex, LRC), TCP(포트 502, MBAP) 변형이 있다.
 
 **OPC UA**
-산업 자동화의 상위 통신 규격. 10장의 계층 표에 등장한다.
+산업 자동화의 상위 통신 규격. 12장의 계층 표에 등장한다.
 
 **CoAP**
 UDP 기반의 REST형 프로토콜. 포트 5683, DTLS 5684, observe와 block-wise 전송을 지원한다.
@@ -435,10 +489,10 @@ CAN·측정 로그 형식. ASC는 Vector ASCII, BLF는 Vector 바이너리, MF4�
 SQLite는 파일 기반 SQL DB, InfluxDB는 시계열 DB(TSDB)다. CAN 로그 저장·질의에 쓴다.
 
 **SOME/IP**
-AUTOSAR의 서비스 지향 미들웨어. RPC·이벤트·직렬화를 제공하고 UDP/TCP 위에서 동작한다.
+AUTOSAR의 서비스 지향 미들웨어. 16바이트 헤더(Service ID, Method ID, Length, Client ID, Session ID, Protocol/Interface Version, Message Type, Return Code)를 쓰고, 메서드(RPC)·이벤트(알림)·필드를 UDP/TCP 위에서 주고받는다. Length는 Client ID부터 센다.
 
 **DoIP(Diagnostics over IP)**
-ISO 13400-2의 IP 기반 진단. 차량 이더넷에서 TCP/UDP 13400 포트를 쓴다.
+ISO 13400-2의 IP 기반 진단. 8바이트 헤더(Protocol Version, Inverse, Payload Type, Payload Length)를 쓰고 UDP/TCP 13400 포트에서 차량 탐색·라우팅 활성화·진단 메시지를 주고받는다. UDS payload는 그대로 실린다.
 
 **CAN XL**
 ISO 11898-1:2024의 CAN 세대. 1~2048바이트 데이터, 11비트 우선순위 ID + 32비트 수용 필드, 두 개의 CRC를 갖는다.
@@ -639,3 +693,62 @@ NMEA 2000의 큰 메시지 전송. 첫 프레임 6바이트, 연속 프레임 7�
 
 **NMEA PGN**
 NMEA 2000의 PGN 사전. J1939와 번호 체계를 공유하지만 같은 번호가 같은 의미라는 보장은 없다.
+
+## A.11 차량 네트워크 세대(CAN FD·LIN·이더넷)
+
+**LIN(Local Interconnect Network)**
+단일 선·12V·1~20kbps의 저가 보조 버스. ISO 17987로 표준화되었고, 1 master + 최대 15 slave가 스케줄 테이블에 따라 통신한다. 창문·시트·미러·공조 액추에이터에 쓴다.
+
+**LIN 헤더(header)**
+마스터가 보내는 브레이크(≥11비트 dominant), 싱크(`0x55`), PID의 묶음. 슬레이브는 헤더를 받은 뒤에만 응답한다.
+
+**PID(Protected Identifier)**
+LIN의 6비트 frame ID에 P0/P1 패리티를 붙인 8비트 값. `P0 = ID0⊕ID1⊕ID2⊕ID4`, `P1 = ¬(ID1⊕ID3⊕ID4⊕ID5)`다. 예: 0x3D → 0x7D.
+
+**LIN 체크섬(classic/enhanced)**
+end-around carry 합의 반전. 클래식은 데이터만, 확장은 PID+데이터를 쓴다. 진단 프레임 0x3C/0x3D는 LIN 2.x에서도 클래식이다.
+
+**스케줄 테이블(schedule table)**
+LIN 마스터가 프레임 ID의 순서와 주기를 정한 표. 슬레이브는 표를 모르고 헤더에만 반응한다.
+
+**NAD(Node Address for Diagnostics)**
+LIN 진단에서 슬레이브를 구분하는 8비트 주소. 0x01~0x7D는 개별 슬레이브, 0x7E는 functional, 0x7F는 broadcast, 0x80~0xFF는 user-defined, 0x00은 go-to-sleep이다. 진단 프레임 0x3C/0x3D는 8바이트와 클래식 체크섬을 쓴다.
+
+**LDF(LIN Description File)**
+LIN 클러스터의 프레임·신호·스케줄을 기술한 파일. CAN의 DBC에 해당한다.
+
+**FlexRay**
+ISO 17458의 차량용 결정적 버스. 최대 10Mbps/channel, 2개 channel, TDMA 정적 구간과 동적 구간, 최대 254바이트 프레임을 갖는다. 고성능 샤시·ADAS에 쓰였다.
+
+**100BASE-T1 / 1000BASE-T1**
+IEEE 802.3bw/802.3bp의 차량용 이더넷 PHY. 단일 꼬임쌍으로 100Mbps/1Gbps를 보내고, 100BASE-T1은 15m, 1000BASE-T1은 15m(Type A)·40m(Type B) 링크를 겨냥한다.
+
+**10BASE-T1S**
+IEEE 802.3cg의 10Mbps 단일 꼬임쌍 이더넷. 점대점 15m, 멀티드롭 25m·8노드 이상을 지원하고 PLCA로 충돌을 피한다.
+
+**PLCA(Physical Layer Collision Avoidance)**
+10BASE-T1S 멀티드롭에서 노드별 전송 차례를 정해 충돌을 피하는 방식.
+
+**TSN(Time-Sensitive Networking)**
+이더넷의 시간 동기(802.1AS)·예약 트래픽(802.1Qbv)·스트림 필터링(802.1Qci) 표준 묶음. 기본 best-effort 이더넷에 지연 한계를 주기 위해 쓴다.
+
+**도메인 아키텍처 / 존 아키텍처**
+도메인은 파워트레인·샤시·바디·ADAS처럼 기능별로 ECU를 묶는 구조다. 존은 전·후·좌·우의 물리 위치별로 I/O를 묶고 이더넷 백본으로 중앙 컴퓨터에 연결하는 구조다.
+
+**DoIP 논리 주소(logical address)**
+DoIP에서 테스터·ECU를 구분하는 2바이트 주소. CAN의 7E0/7E8에 해당하는 진단 주소다.
+
+**라우팅 활성화(routing activation)**
+DoIP에서 TCP 연결 후 테스터의 논리 주소를 등록하고 진단 권한을 얻는 절차. 요청 `0x0005`, 응답 `0x0006`, 성공 코드 `0x10`이다.
+
+**차량 공지(vehicle announcement)**
+DoIP에서 차량이 UDP로 보내는 `0x0004` 응답. VIN(17바이트), 논리 주소(2), EID(6), GID(6), further action(1)을 담는다.
+
+**SOME/IP-SD(Service Discovery)**
+SOME/IP의 서비스 발견 프로토콜. Service ID `0xFFFF`, Method ID `0x8100`, UDP 멀티캐스트(관례 포트 30490)를 쓰고 FindService/OfferService/SubscribeEventgroup 엔트리를 주고받는다.
+
+**SOME/IP-TP**
+SOME/IP의 큰 메시지 분할. 4바이트 TP 헤더에 28비트 오프셋(16바이트 단위)과 more-segments 비트를 넣는다.
+
+**이벤트그룹(eventgroup)**
+SOME/IP에서 여러 이벤트를 묶어 구독 단위로 다루는 식별자. SubscribeEventgroup/Ack 엔트리로 구독한다.

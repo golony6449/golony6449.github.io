@@ -1,8 +1,8 @@
-# 15장 FreeRTOS로 CAN 수신 태스크 나누기
+# 18장 FreeRTOS로 CAN 수신 태스크 나누기
 
 ## 이 장에서
 
-13장의 ESP32 장치는 `loop()` 하나에서 웹 요청 처리, CAN 수신, PID 요청, Bus-Off 복구를 모두 했다. 트래픽이 적고 응답이 빠를 때는 잘 돌아간다. 하지만 Wi-Fi 연결이 느려지고, CAN 오류가 반복되고, 로그를 SD 카드에 쓰기 시작하면 `loop()` 한 바퀴가 길어지면서 CAN 수신 큐가 넘치기 시작한다.
+16장의 ESP32 장치는 `loop()` 하나에서 웹 요청 처리, CAN 수신, PID 요청, Bus-Off 복구를 모두 했다. 트래픽이 적고 응답이 빠를 때는 잘 돌아간다. 하지만 Wi-Fi 연결이 느려지고, CAN 오류가 반복되고, 로그를 SD 카드에 쓰기 시작하면 `loop()` 한 바퀴가 길어지면서 CAN 수신 큐가 넘치기 시작한다.
 
 이 장은 그 일을 **FreeRTOS 태스크**로 나눈다. CAN 수신, OBD 요청·파싱, 경보·복구를 각각 태스크로 두고, 큐로 데이터를 넘기고, 우선순위와 스택을 설계한다. 대상은 ESP-IDF의 FreeRTOS다. Arduino-ESP32 코어도 내부적으로 ESP-IDF FreeRTOS를 쓰므로 개념은 같지만, 이 장의 코드는 ESP-IDF API(`freertos/...`, `driver/twai.h`)를 기준으로 한다.
 
@@ -19,7 +19,7 @@
 - 우선순위 역전과 뮤텍스
 - 태스크 스택·워치독·관측
 
-## 15.1 왜 태스크로 나누는가
+## 18.1 왜 태스크로 나누는가
 
 `loop()` 하나짜리 구조의 문제는 **가장 느린 작업이 전체 주기를 결정**한다는 것이다. 웹 응답을 기다리는 동안 CAN 프레임을 못 읽고, SD 카드 쓰기가 끝날 때까지 PID 요청이 밀린다. 웹의 이벤트 루프도 같은 문제를 겪지만, Node.js에서는 논블로킹 I/O와 워커 스레드로 완화한다. MCU에서는 RTOS 태스크가 그 역할을 한다.
 
@@ -53,7 +53,7 @@ BaseType_t xTaskCreatePinnedToCore(
 - 스케줄러는 준비된 태스크 중 우선순위가 가장 높은 것을 실행한다. 같은 우선순위는 라운드 로빈(time slicing)으로 돌아간다.
 - 우선순위를 높게 잡는다고 좋은 것이 아니다. 높은 태스크가 바쁘게 돌면 낮은 태스크가 굶는다. **우선순위는 "얼마나 급한가"이지 "얼마나 중요한가"가 아니다.**
 
-## 15.2 태스크 스택과 우선순위 설계
+## 18.2 태스크 스택과 우선순위 설계
 
 태스크마다 스택이 필요하다. 함수 호출, 지역 변수, ISR 진입 시 문맥, `printf`의 내부 버퍼가 모두 스택을 쓴다. ESP-IDF에서 `uxTaskGetStackHighWaterMark(NULL)`은 현재 태스크의 **최소 여유 스택(바이트)**을 돌려준다. 이 값이 0에 가까우면 위험하다.
 
@@ -66,7 +66,7 @@ void check_stack(void) {
 
 - 처음에는 넉넉히 잡고(예: 4KB), 하이워터마크를 측정한 뒤 줄인다.
 - `printf`/`ESP_LOG`는 스택을 많이 쓴다. 로그를 많이 넣는 태스크는 스택을 더 잡는다.
-- 큰 버퍼는 스택이 아니라 정적/전역이나 힙에 둔다(14장).
+- 큰 버퍼는 스택이 아니라 정적/전역이나 힙에 둔다(17장).
 - 스택 오버플로는 예외가 아니라 조용한 손상이다. ESP-IDF의 `CONFIG_FREERTOS_CHECK_STACKOVERFLOW`와 `CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK`을 켜서 탐지한다(버전·설정 확인 필요).
 
 이 장의 예제는 다음 구성을 쓴다. 우선순위와 스택은 **예시**이며, 실제 프로젝트에서는 측정으로 조정한다.
@@ -107,7 +107,7 @@ TWAI 수신 인터럽트/드라이버 RX 큐
 - `obd`는 200ms 주기로 요청하고, 큐에서 프레임을 꺼내 파싱한다. 파싱이 오래 걸리면 `can_rx`가 큐에 쌓기만 하므로 수신은 계속된다.
 - HTTP 서버는 ESP-IDF `httpd`가 자체 태스크로 돌린다. Arduino `WebServer`를 쓴다면 `handleClient()`를 별도 태스크나 `loop()`에서 호출해야 한다.
 
-## 15.3 큐: 복사와 블로킹
+## 18.3 큐: 복사와 블로킹
 
 FreeRTOS 큐는 **고정 크기 항목을 복사**해서 넘긴다. `xQueueCreate(length, item_size)`로 만들고, `xQueueSend()`는 `item_size` 바이트를 큐 저장 공간에 복사한다. 따라서 보낸 쪽의 지역 변수가 사라져도 큐의 데이터는 유효하다. 반대로 포인터를 보내면 가리키는 대상의 수명은 보낸 쪽이 책임져야 한다.
 
@@ -156,7 +156,7 @@ void IRAM_ATTR can_isr(void) {
 - FreeRTOS 문서는 "Never call a FreeRTOS API function that does not have FromISR in its name from an ISR"라고 못 박는다. `xQueueSend()` 일반형을 ISR에서 쓰면 안 된다.
 - ESP-IDF TWAI 드라이버를 쓰면 이 ISR을 직접 작성하지 않는다. 드라이버가 내부 RX 큐에 넣고, 태스크가 `twai_receive()`로 꺼낸다. 하지만 "ISR은 넣기만, 처리는 태스크"라는 원리는 같다.
 
-## 15.4 TWAI 수신 큐와 경보
+## 18.4 TWAI 수신 큐와 경보
 
 legacy TWAI 드라이버는 다음 두 가지 큐를 제공한다.
 
@@ -177,7 +177,7 @@ g_config.alerts_enabled = TWAI_ALERT_BUS_OFF
                         | TWAI_ALERT_RX_QUEUE_FULL;
 ```
 
-- `TWAI_GENERAL_CONFIG_DEFAULT(TX, RX, MODE)`의 순서는 **TX가 먼저**다. 13장에서 확인한 그대로다.
+- `TWAI_GENERAL_CONFIG_DEFAULT(TX, RX, MODE)`의 순서는 **TX가 먼저**다. 16장에서 확인한 그대로다.
 - `rx_queue_len`은 "드라이버가 몇 프레임을 버퍼링하는가"다. 응용 큐(`g_frame_q`)와 별개다. 둘 다 넘칠 수 있다.
 - `TWAI_ALERT_RX_QUEUE_FULL`은 "드라이버 큐가 넘쳤다"는 뜻이다. 응용 큐가 넘친 것은 별도 카운터로 센다.
 - 경보는 `twai_reconfigure_alerts()`로 실행 중에 바꿀 수 있고, `twai_read_alerts(&alerts, ticks)`로 읽는다. `ticks`에 `portMAX_DELAY`를 주면 경보가 올 때까지 블로킹한다.
@@ -196,9 +196,9 @@ g_config.alerts_enabled = TWAI_ALERT_BUS_OFF
 
 TWAI 드라이버는 상태를 `twai_get_status_info()`로 제공한다. `state`, `msgs_to_rx`, `rx_missed_count`, `bus_error_count`, `tx_error_counter`, `rx_error_counter`를 로그에 남긴다. "통신이 안 된다"보다 "TEC=130, REC=0, bus_error=42"가 훨씬 유용하다.
 
-## 15.5 Bus-Off 복구를 태스크로
+## 18.5 Bus-Off 복구를 태스크로
 
-13장에서는 `loop()`에서 `twai_get_status_info()`를 폴링해 Bus-Off를 확인했다. 태스크 구조에서는 **경보를 기다리는 태스크**를 두는 편이 깔끔하다. 아래 예제에서 `g_rx_queue_full`은 `_Atomic uint32_t`라고 가정한다.
+16장에서는 `loop()`에서 `twai_get_status_info()`를 폴링해 Bus-Off를 확인했다. 태스크 구조에서는 **경보를 기다리는 태스크**를 두는 편이 깔끔하다. 아래 예제에서 `g_rx_queue_full`은 `_Atomic uint32_t`라고 가정한다.
 
 ```c
 static void alert_task(void *arg) {
@@ -255,9 +255,9 @@ BUS_OFF ──twai_initiate_recovery()──→ RECOVERING
 - `twai_read_alerts()`에 `portMAX_DELAY`를 주면 경보가 없을 때 영원히 블로킹한다. TWDT에 감시되는 태스크라면 유한 타임아웃을 주고 주기적으로 `esp_task_wdt_reset()`을 호출한다.
 - 경보 태스크가 죽으면 Bus-Off 복구가 멈춘다. 경보 태스크의 하이워터마크와 하트비트를 관측한다.
 
-## 15.6 CAN 수신·OBD 태스크 코드
+## 18.6 CAN 수신·OBD 태스크 코드
 
-다음은 13장의 `handleFrame()`과 `checkBus()`를 태스크 구조로 옮긴 골격이다. Wi-Fi/HTTP 부분은 13.5절의 JSON 구조를 그대로 쓰되, `httpd` 핸들러가 `state_snapshot()`을 호출한다고 가정한다.
+다음은 16장의 `handleFrame()`과 `checkBus()`를 태스크 구조로 옮긴 골격이다. Wi-Fi/HTTP 부분은 16.5절의 JSON 구조를 그대로 쓰되, `httpd` 핸들러가 `state_snapshot()`을 호출한다고 가정한다.
 
 ```c
 #include <string.h>
@@ -524,7 +524,7 @@ void app_main(void) {
 - `len`은 PCI 뒤 페이로드의 길이다. 프레임에 필요한 총 바이트는 PCI 1바이트를 더한 `1 + len`이므로 `f->dlc < 1 + len`으로 검사한다. 패딩이 없는 5바이트 `04 41 0C 1A F8`도 받는다.
 
 - `g_state`의 값(rpm·speed·coolant·last_update·bus_ok)은 뮤텍스로 보호하고, 요청·응답·드롭 카운터는 `_Atomic`으로 둔다. `state_snapshot()`은 뮤텍스 안에서 값을 복사한 뒤 원자 카운터를 읽어 합친다. 두 종류의 공유 데이터를 한 가지 규칙으로 억지로 묶지 않는다.
-- `g_rx_queue_full`·`g_app_drops`·`g_driver_drops`는 여러 태스크/ISR 문맥에서 갱신될 수 있으므로 `_Atomic`을 쓴다. `volatile`은 원자성을 보장하지 않는다(14.3절).
+- `g_rx_queue_full`·`g_app_drops`·`g_driver_drops`는 여러 태스크/ISR 문맥에서 갱신될 수 있으므로 `_Atomic`을 쓴다. `volatile`은 원자성을 보장하지 않는다(17.3절).
 - `state_update()`의 임계 구역은 짧다. 뮤텍스를 잡은 채 로그·JSON·네트워크를 하지 않는다.
 - `xQueueSend(g_frame_q, &f, 0)`은 즉시 반환한다. 큐가 가득 차면 프레임을 버리고 `app_drops`를 올린다. OBD 응답은 요청마다 새로 오므로, 오래된 프레임을 버리는 것보다 새 프레임을 버리는 정책이 단순하다. 다만 "응답을 놓쳤다"는 카운터가 중요하다.
 - `twai_receive()`의 100ms 타임아웃은 태스크가 영원히 블로킹하지 않게 한다. TWDT 리셋도 그 주기에 맞춘다.
@@ -556,7 +556,7 @@ static bool state_snapshot(vehicle_state_t *out) {
 - 복사 비용은 구조체 크기에 비례한다. 필드를 줄이거나, 자주 읽는 값만 별도 원자 변수로 둔다.
 - 뮤텍스를 잡지 못하면 `false`를 돌려주고, 핸들러는 이전 값을 유지하거나 `503`을 반환한다. 무한정 기다리지 않는다.
 
-## 15.7 우선순위 역전과 뮤텍스
+## 18.7 우선순위 역전과 뮤텍스
 
 우선순위 스케줄러에는 **우선순위 역전(priority inversion)**이라는 함정이 있다.
 
@@ -581,7 +581,7 @@ FreeRTOS 뮤텍스에는 **우선순위 상속(priority inheritance)**이 있다
 
 이 장의 `g_state_lock`은 짧은 복사만 보호한다. JSON 생성, 로그 출력, HTTP 전송은 뮤텍스 밖에서 한다. 이것이 "락을 최소화"의 실제 의미다.
 
-## 15.8 태스크 설계 체크리스트
+## 18.8 태스크 설계 체크리스트
 
 - [ ] 각 태스크의 **최악 실행 시간**을 측정했는가
 - [ ] 우선순위가 "급한 순서"인가, "중요한 순서"인가

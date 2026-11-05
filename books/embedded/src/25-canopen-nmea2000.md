@@ -91,6 +91,28 @@ NMT 명령은 CAN ID `0x000` 고정으로 보낸다. 데이터는 2바이트이�
 
 예를 들어 노드 5를 시작하려면 `0x000`에 `01 05`를 보낸다. 모든 노드를 대상으로 하려면 노드 ID를 0으로 둔다.
 
+상태 전환을 그림으로 정리하면 다음과 같다. NMT 명령은 CAN ID `0x000`으로 보내고, 대상 노드 ID를 데이터 두 번째 바이트에 넣는다.
+
+```text
+전원 인가
+   │
+   ▼
+Initialisation ──(자동)──▶ Pre-operational
+                              │  0x01 Start Remote Node
+                              ▼
+                         Operational
+                              │  0x02 Stop Remote Node
+                              ▼
+                           Stopped
+                              │  0x01 Start Remote Node
+                              ▼
+                         Operational
+
+Operational/Stopped ──0x80 Enter Pre-operational──▶ Pre-operational
+0x81 Reset Node ──▶ Initialisation ──(자동)──▶ Pre-operational
+0x82 Reset Communication ──▶ 통신 파라미터 초기화 ──(자동)──▶ Pre-operational
+```
+
 ### 왜 상태가 필요한가
 
 - **Pre-operational**은 "설정 모드"다. SDO로 객체 사전을 읽고 쓰며 PDO 매핑을 설정할 수 있지만, PDO 트래픽은 나가지 않는다.
@@ -419,12 +441,12 @@ bus.shutdown()
 - PDO는 `0x180+ID` 등으로 보내는 이벤트 스트림이다. 매핑·전송 형식·NMT 상태가 모두 맞아야 한다.
 - 하트비트는 `0x700+ID`, EMCY는 `0x080+ID`다. 하트비트는 생존, EMCY는 오류를 알린다.
 - NMEA 2000은 IEC 61162-3이며 J1939/ISO 11783 데이터링크를 쓴다. 250kbps, 50노드, 120Ω 종단, 29비트 PGN/SA다.
-- NMEA 2000은 일반 응용 메시지에 fast packet을 쓴다. 최대 223바이트이고, 일부 ISO 계열 PGN은 ISO TP를 쓴다.
+- NMEA 2000은 일반 응용 메시지에 fast packet을 쓴다. 최대 223바이트이고, 일부 ISO 계열 PGN은 ISO-TP를 쓴다.
 - 같은 "PGN"이라도 J1939와 NMEA 2000의 사전은 다르다. DBC를 그대로 재사용하지 않는다.
 
 ## 연습 문제
 
-### 1. NMT 상태
+### 1. (기초) NMT 상태
 
 노드 7이 Pre-operational 상태다. 다음 명령을 보낸 뒤 각각 어떤 상태가 되는가?
 
@@ -434,19 +456,19 @@ b) 0x000  02 07
 c) 0x000  80 07
 ```
 
-### 2. SDO 프레임
+### 2. (중급) SDO 프레임
 
 노드 3의 객체 `0x1018` subindex `0x01`을 읽으려 한다. 요청 CAN ID와 첫 바이트를 쓰라. 응답이 `43 18 10 01 78 56 34 12`라면 값은 얼마인가?
 
-### 3. PDO 매핑
+### 3. (중급) PDO 매핑
 
 TPDO1에 `0x2000/0x01`(16비트 온도, 0.1°C)와 `0x2000/0x02`(16비트 압력, 0.1kPa)를 매핑했다. TPDO1 프레임이 `2C 01 E8 03 00 00 00 00`일 때 온도와 압력을 계산하라.
 
-### 4. NMEA 2000 PGN
+### 4. (중급) NMEA 2000 PGN
 
 NMEA 2000 PGN 127250 프레임의 heading 바이트가 `5C 3D`다. 방향을 라디안과 도로 계산하라. 이 PGN을 J1939 PGN 61444로 해석하면 왜 틀리는가?
 
-### 5. fast packet
+### 5. (중급) fast packet
 
 NMEA 2000 fast packet으로 43바이트를 보낸다. 총 프레임 수와 첫 프레임·연속 프레임의 데이터 바이트 수를 쓰라.
 
@@ -472,7 +494,7 @@ NMT 명령은 CAN ID `0x000` **고정**으로 보내고, 데이터 두 번째 �
 
 ### 3.
 
-- 온도: `2C 01` = `0x012C` = 300 → `300 / 10 = 30.0 °C`
+- 온도: `2C 01` = `0x012C` = 300 → `300 / 10 = 30.0°C`
 - 압력: `E8 03` = `0x03E8` = 1000 → `1000 / 10 = 100.0 kPa`
 
 PDO는 매핑된 순서대로 값이 이어지고, 각 값은 리틀 엔디언이다. 매핑을 모르면 바이트를 해석할 수 없다.

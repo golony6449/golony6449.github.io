@@ -1,6 +1,6 @@
 # Summary
 
-[서문](introduction.md)
+[서문: 이 책의 독자와 읽는 법](introduction.md)
 
 - [1장 웹 개발자의 사고 전환](01-web-to-embedded.md)
 - [2장 UART: 가장 단순한 시리얼](02-uart.md)

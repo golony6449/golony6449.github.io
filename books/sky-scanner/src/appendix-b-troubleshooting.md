@@ -31,6 +31,31 @@
 | `gh pr ready`가 "Something went wrong"을 반복 | GitHub GraphQL 일시 장애. REST로는 Draft 해제 불가 | 1분 간격 재시도 |
 | 통합 PR 리뷰가 `too_large`로 거절 | 차수 전체 diff가 리뷰 도구 한도를 넘음 | 작업 PR별 리뷰 + 실서버 끝에서 끝까지 확인으로 대신 |
 
+## B.3.1 실기와 로컬 모델(12~13장)
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| `AttributeError: function 'rtlsdr_set_dithering' not found` | pyrtlsdr 0.4.0+는 rtl-sdr-blog DLL에 없는 함수를 시작할 때 찾음 | pyrtlsdr 0.3.0 + `setuptools<81` 고정(12장) |
+| 녹음이 배속처럼 들림(재생 길이 / 실제 시간 = 0.61~0.66) | 읽기와 신호 처리를 번갈아 해서 처리 중 샘플이 버려짐 | 읽기 전용 스레드 + 대기열(12장) |
+| Qwen이 영어 교신을 중국어나 엉뚱한 문장으로 적음 | 언어·맥락을 안 줌 | 언어 en + 항공 무전 맥락(12장) |
+| 버튼을 추가했는데 화면에 안 보임 | 브라우저가 옛 JS를 캐시에서 씀 | 화면 파일에 `Cache-Control: no-cache` |
+| GPU 모델이 한 건에 10~22초, 또는 멈춤 | `cublas64_12.dll`을 못 찾아 조용히 CPU로 내려감. CTranslate2는 cuBLAS를 늦게 불러 PATH만 봄 | DLL 폴더를 PATH에도 추가, CPU 전환 시 경고(13장) |
+| large-v3 변환 중 Segmentation fault | Windows에서 `--low_cpu_mem_usage` 경로 | 파이썬 API로 `load_as_float16=True`(13장) |
+| 변환 중 `vocab_file`이 None | 오프라인 모드라 단어표를 못 받음 | 오프라인 모드 끄고 재실행 |
+| 엔진을 바꾸자 대기열이 가득 참 | 시작 따라잡기가 지난 교신 1,389개를 다 넣음 | 따라잡기 끄기 옵션 + 최대 500개(13장) |
+| 서재에서 녹음 0건, 잡음 +10 dB | 실내 전자기기 잡음 + 금속 방범창 차폐 | 베란다로 되돌림(12장) |
+
+## B.3.2 리눅스 서버(15장)
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| 빌드가 `LibUSB 1.0 required`, 그런데 마지막에 DONE이 찍힘 | 여러 줄 명령의 `\` 뒤 공백으로 명령이 끊김 | 한 줄짜리 명령으로 다시 |
+| `tailscale serve`가 아무 말 없이 멈춤 | tailnet에서 Serve가 꺼져 있다는 안내를 파이프가 숨김 | 출력을 파일로 받아 확인, 관리자 화면에서 켜기 |
+| `serve config denied` | root 권한 필요 | `tailscale set --operator=$USER` 한 번 |
+| hosts의 짧은 이름으로 HTTPS 거부 | 인증서와 serve 규칙이 ts.net 이름 기준 | ts.net 이름으로 접속 |
+| 502 | 서버 전체가 꺼졌다 켜져 앱이 없음 | 앱 재시작, 로그를 임시 폴더 밖으로 |
+| 서버가 부하 7분 뒤, 또는 부팅 2초 만에 꺼짐(정상 종료 흔적 0) | 67W 노트북 어댑터 용량 초과 | 100W 어댑터로 교체 |
+
 ## B.4 데이터
 
 | 증상 | 원인 | 조치 |

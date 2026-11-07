@@ -29,6 +29,7 @@
 - [14장 모델을 올리고 돌리는 코드, 한 줄씩](14-engine-walkthrough.md)
 - [15장 서버로 이사: GPU 없는 상자와 67W 어댑터](15-linux-server.md)
 - [16장 차 안의 수신기: 40 Mbps를 320 KB/s로 줄이고 스풀로 잇다](16-remote-receiver.md)
+- [17장 사설 도메인과 Nginx: URL PATH의 함정에서 sky-scanner.golony.dev까지](17-private-domain-nginx.md)
 
 ---
 

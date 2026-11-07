@@ -28,6 +28,8 @@
 - [13장 로컬 모델 돌리기: GPU는 100%, 정답은 0개](13-local-models.md)
 - [14장 모델을 올리고 돌리는 코드, 한 줄씩](14-engine-walkthrough.md)
 - [15장 서버로 이사: GPU 없는 상자와 67W 어댑터](15-linux-server.md)
+- [16장 상시 가동의 기술: 사라진 워크스페이스와 클라우드로 띄운 DB](16-continuous-ops-and-backup.md)
+
 
 ---
 

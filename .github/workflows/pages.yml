@@ -34,6 +34,7 @@ jobs:
         run: |
           mdbook build books/embedded
           mdbook build books/sky-scanner
+          mdbook build books/secret-defense
 
       - name: Assemble site
         run: |
@@ -41,6 +42,7 @@ jobs:
           cp index.html _site/index.html
           cp -r books/embedded/book _site/embedded
           cp -r books/sky-scanner/book _site/sky-scanner
+          cp -r books/secret-defense/book _site/secret-defense
           touch _site/.nojekyll
 
       - name: Upload Pages artifact

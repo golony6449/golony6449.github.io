@@ -6,6 +6,7 @@
 
 - [웹 개발자를 위한 임베디드 입문](https://golony6449.github.io/embedded/) — 원본: `books/embedded/`
 - [하늘을 엿듣는 웹 개발자: 에어밴드 수신기 제작기](https://golony6449.github.io/sky-scanner/) — 원본: `books/sky-scanner/`
+- [에이전트로부터 시크릿을 지키는 법](https://golony6449.github.io/secret-defense/) — 원본: `books/secret-defense/`
 
 ## 저장소 구조
 
@@ -14,6 +15,8 @@ index.html                  사이트 루트(책 목록)
 books/embedded/book.toml    mdBook 설정
 books/embedded/src/         책 원고
 books/sky-scanner/          에어밴드 수신기 제작기(같은 구조)
+books/secret-defense/       에이전트로부터 시크릿을 지키는 법(같은 구조)
+_posts/                     블로그 포스트 마크다운 아카이브
 .github/workflows/pages.yml GitHub Pages 배포 워크플로
 .ds-tmp/                    작업용 임시 폴더(커밋하지 않음)
 ```

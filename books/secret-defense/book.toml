@@ -1,0 +1,17 @@
+[book]
+title = "에이전트로부터 시크릿을 지키는 법"
+description = "인간 개발자가 AI의 탁상공론을 박살 낸 7번의 대화와 최종 아키텍처 완전판"
+authors = ["Park SeongHeum", "Antigravity"]
+language = "ko"
+src = "src"
+
+[output.html]
+site-url = "https://golony6449.github.io/secret-defense/"
+git-repository-url = "https://github.com/golony6449/golony6449.github.io"
+edit-url-template = "https://github.com/golony6449/golony6449.github.io/edit/main/books/secret-defense/src/{path}"
+default-theme = "light"
+preferred-dark-theme = "navy"
+additional-js = ["mermaid-init.js"]
+
+[output.html.search]
+enable = true

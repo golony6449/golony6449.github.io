@@ -1,0 +1,16 @@
+[book]
+title = "좌충우돌 3D 프린터로 첫 물건 만들기"
+description = "글루건으로 붙여 쓰던 OBD2·USB-CAN 어댑터를 FreeCAD MCP와 대화하며 첫 3D 프린팅 케이스로 설계하기까지의 기록"
+authors = ["Park SeongHeum"]
+language = "ko"
+src = "src"
+
+[output.html]
+site-url = "https://golony6449.github.io/3d-printing/"
+git-repository-url = "https://github.com/golony6449/golony6449.github.io"
+edit-url-template = "https://github.com/golony6449/golony6449.github.io/edit/main/books/3d-printing/src/{path}"
+default-theme = "light"
+preferred-dark-theme = "navy"
+
+[output.html.search]
+enable = true

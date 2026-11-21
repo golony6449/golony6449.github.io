@@ -1,0 +1,16 @@
+[book]
+title = "유로트럭으로 배우는 자율주행: 에이전트와 함께 쓴 집필 노트"
+description = "유로트럭 시뮬레이터 2를 무대로 인식·판단·제어 자율주행 플랫폼을 만들며, 여러 AI 에이전트와 나눈 대화와 삽질을 날짜순으로 남긴 원문 집필 노트"
+authors = ["Park SeongHeum"]
+language = "ko"
+src = "src"
+
+[output.html]
+site-url = "https://golony6449.github.io/ets-autonomous-driving/"
+git-repository-url = "https://github.com/golony6449/golony6449.github.io"
+edit-url-template = "https://github.com/golony6449/golony6449.github.io/edit/main/books/ets-autonomous-driving/src/{path}"
+default-theme = "light"
+preferred-dark-theme = "navy"
+
+[output.html.search]
+enable = true

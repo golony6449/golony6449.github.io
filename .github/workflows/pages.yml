@@ -37,6 +37,7 @@ jobs:
           mdbook build books/secret-defense
           mdbook build books/3d-printing
           mdbook build books/ets-autonomous-driving
+          mdbook build books/esp32
 
       - name: Assemble site
         run: |
@@ -47,6 +48,7 @@ jobs:
           cp -r books/secret-defense/book _site/secret-defense
           cp -r books/3d-printing/book _site/3d-printing
           cp -r books/ets-autonomous-driving/book _site/ets-autonomous-driving
+          cp -r books/esp32/book _site/esp32
           touch _site/.nojekyll
 
       - name: Upload Pages artifact

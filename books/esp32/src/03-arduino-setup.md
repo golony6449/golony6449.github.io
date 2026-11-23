@@ -12,6 +12,21 @@ Arduino IDE는 보드마다 **보드 패키지**를 따로 설치한다. 컴파�
 https://espressif.github.io/arduino-esp32/package_esp32_index.json
 ```
 
+> **질문 노트** — "근데 이건 그냥 궁금한건데 esp32 침인데 개발툴은 어떻게 아두이노꺼로 쓸수있어?" (첫 실험을 마친 뒤에 던진 질문이지만 여기에 둔다)
+
+Arduino는 특정 칩 전용 도구가 아니라 **공통 API 규격과 IDE**다. 칩마다 그 규격을 구현한 **코어**를 플러그인처럼 끼워 쓴다.
+
+| 층 | 하는 일 | 이 보드에서 실제로 쓴 것 |
+|---|---|---|
+| Arduino API | `setup()`/`loop()`, `Serial`, `digitalWrite`, `millis()` 같은 공통 함수 이름 | 스케치 코드 |
+| 코어(보드 패키지) | 그 함수들을 이 칩에서 실제로 동작하게 구현 | `esp32` 3.0.7 (Espressif가 만듦) |
+| 칩 SDK | 제조사의 공식 프레임워크. FreeRTOS도 여기 있다 | ESP-IDF |
+| 툴체인 | 그 칩용 컴파일러와 업로드 도구 | `xtensa-esp32s3-elf` GCC, esptool |
+
+웹으로 치면 **JDBC와 DB 드라이버**다. 코드는 표준 인터페이스에 맞춰 쓰고, 실제 동작은 끼운 드라이버가 칩에 맞게 처리한다. IDE는 고른 보드에 맞는 컴파일러와 업로더를 불러 주는 껍데기다. 원래 Arduino는 Uno 같은 AVR 칩용으로 시작했고, API가 널리 쓰이자 칩 제조사들이 자기 칩용 코어를 만들어 붙였다.
+
+증거는 이 책 곳곳에 있다. 보드 매니저에 넣은 주소가 Espressif 것이고, 업로드 로그에는 `esptool.py`가, 7장의 백트레이스 해석에는 `xtensa-esp32s3-elf-addr2line`이 나온다. 6장에서는 Arduino API에 없는 FreeRTOS 함수(`xTaskCreate`, `xPortGetCoreID`)를 스케치에서 바로 불렀다. Arduino 코어가 ESP-IDF **위에 얹힌 얇은 층**이라서 가능하다. 나중에 ESP-IDF로 넘어가는 일은 이 얇은 층을 걷어 내는 일에 가깝다.
+
 ## 3.2 4.0이 최신인데 왜 3.0.7인가
 
 보드 매니저를 열자 버전이 여럿 보였다.

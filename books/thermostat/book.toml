@@ -1,0 +1,17 @@
+[book]
+title = "보일러는 없었다: 웹 개발자의 SmartThings 온도조절기 제작기"
+description = "IoT를 해 보려고 임베디드에 입문한 웹 개발자가 ESP32-S3와 Matter로 우리 집 지역난방을 SmartThings에 붙이기까지의 토이 프로젝트 개발기"
+authors = ["Park SeongHeum"]
+language = "ko"
+src = "src"
+
+[output.html]
+site-url = "https://golony6449.github.io/thermostat/"
+git-repository-url = "https://github.com/golony6449/golony6449.github.io"
+edit-url-template = "https://github.com/golony6449/golony6449.github.io/edit/main/books/thermostat/src/{path}"
+default-theme = "light"
+preferred-dark-theme = "navy"
+additional-js = ["mermaid-init.js"]
+
+[output.html.search]
+enable = true

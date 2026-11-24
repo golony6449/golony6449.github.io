@@ -9,6 +9,7 @@
 - [에이전트로부터 시크릿을 지키는 법](https://golony6449.github.io/secret-defense/) — 원본: `books/secret-defense/`
 - [유로트럭으로 배우는 자율주행: 에이전트와 함께 쓴 집필 노트](https://golony6449.github.io/ets-autonomous-driving/) — 원본: `books/ets-autonomous-driving/`(비공개 레포 `ets-autonomous-driving`의 `docs/journal/` 원문을 복사)
 - [웹 개발자의 ESP32 도전기](https://golony6449.github.io/esp32/) — 원본: `books/esp32/`
+- [보일러는 없었다: 웹 개발자의 SmartThings 온도조절기 제작기](https://golony6449.github.io/thermostat/) — 원본: `books/thermostat/`(공개 레포 `thermostat-esp32`의 `docs/journal/` 집필 노트를 책으로 가공)
 
 ## 저장소 구조
 
@@ -20,6 +21,7 @@ books/sky-scanner/          에어밴드 수신기 제작기(같은 구조)
 books/secret-defense/       에이전트로부터 시크릿을 지키는 법(같은 구조)
 books/ets-autonomous-driving/ 유로트럭 자율주행 집필 노트 원문(같은 구조)
 books/esp32/                ESP32 도전기(같은 구조)
+books/thermostat/           SmartThings 온도조절기 제작기(같은 구조, Mermaid 사용)
 _posts/                     블로그 포스트 마크다운 아카이브
 .github/workflows/pages.yml GitHub Pages 배포 워크플로
 .ds-tmp/                    작업용 임시 폴더(커밋하지 않음)

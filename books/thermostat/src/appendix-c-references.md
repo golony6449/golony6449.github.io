@@ -28,4 +28,9 @@
 
 ## 도구
 
+- Arduino CLI 문서: <https://arduino.github.io/arduino-cli/>
+- ESP32_Display_Panel(Waveshare 보드 화면·터치 드라이버): <https://github.com/esp-arduino-libs/ESP32_Display_Panel>
+- LVGL 문서: <https://docs.lvgl.io/>
+- WinLibs(Windows용 MinGW-w64 `g++`): <https://winlibs.com/>
+
 - Claude 고객지원, 데이터 내보내기: <https://support.claude.com/en/articles/9450526-how-to-export-your-claude-data>

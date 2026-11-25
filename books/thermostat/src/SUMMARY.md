@@ -24,6 +24,16 @@
 
 - [10장 줄 세우기에서 동시에 달리기로: 일감 그래프](10-task-graph.md)
 - [11장 콘센트가 아니었다: 테스터를 든 웹 개발자](11-not-an-outlet.md)
+- [12장 오픈형이었다: 뒤집힌 구동기와 어댑터 한 줄](12-normally-open.md)
+
+# 5부. 구현의 날: 보드와 홈서버
+
+- [13장 격리된 작업실과 PC 단위 테스트](13-workbench.md)
+- [14장 손가락이 찾아낸 버그 넷](14-finger-bugs.md)
+- [15장 전원을 뽑아도 기억하는 법: NVS](15-nvs.md)
+- [16장 SmartThings에 내가 만든 온도조절기가 떴다](16-commissioning.md)
+- [17장 합치는 순간 터지는 네 개의 지뢰](17-integration-mines.md)
+- [18장 레포 말고 API로: 홈서버가 주는 센서, 시각, 목록](18-homeserver-api.md)
 
 ---
 

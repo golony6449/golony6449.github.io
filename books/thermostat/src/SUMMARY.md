@@ -35,6 +35,12 @@
 - [17장 합치는 순간 터지는 네 개의 지뢰](17-integration-mines.md)
 - [18장 레포 말고 API로: 홈서버가 주는 센서, 시각, 목록](18-homeserver-api.md)
 
+# 6부. 화면이 흔들린 날
+
+- [19장 화면이 흔들린다: 찢어짐이 아니었다](19-shaking-screen.md)
+- [20장 짝홀이 뒤집힌 바운스 버퍼](20-bounce-buffer.md)
+- [21장 덜 그리기: 바뀐 것만 다시 그리는 법](21-draw-less.md)
+
 ---
 
 - [부록 A. 용어집](appendix-a-glossary.md)

@@ -71,7 +71,7 @@
 | 그 밖 | I2C(GPIO8 SDA, GPIO9 SCL), RTC, RS485, CAN, 절연 DI/DO, IO 확장 칩 CH422G |
 | 온도 센서(예정) | SHT40(I2C), 보드에서 떨어뜨려 장착 |
 | 최종 기기 후보 | M5Stack M5Dial(ESP32-S3, 원형 화면 + 다이얼) 또는 위 보드를 벽걸이 패널로 |
-| 펌웨어 | Arduino ESP32 코어 3.3.12 + 내장 Matter 라이브러리(Matter over Wi-Fi), UI는 LVGL 8.4.0 + ESP32_Display_Panel 1.0.0 |
+| 펌웨어 | Arduino ESP32 코어 3.3.12 → 3.3.13(20장, 화면 드라이버 버그 수정) + 내장 Matter 라이브러리(Matter over Wi-Fi), UI는 LVGL 8.4.0 + ESP32_Display_Panel 1.0.0 |
 | 빌드 도구 | `arduino-cli` 1.6.0(프로젝트 전용 설정), PC 단위 테스트는 WinLibs MinGW-w64 `g++` 16.2.0(13장) |
 | 스마트홈 | 삼성 SmartThings, Matter 지원 허브 |
 | 홈서버 | SmartThings API 토큰을 24시간마다 갱신하는 자작 서버(Home-Dashboard) |

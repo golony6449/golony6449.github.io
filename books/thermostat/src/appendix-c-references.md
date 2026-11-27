@@ -31,6 +31,9 @@
 - Arduino CLI 문서: <https://arduino.github.io/arduino-cli/>
 - ESP32_Display_Panel(Waveshare 보드 화면·터치 드라이버): <https://github.com/esp-arduino-libs/ESP32_Display_Panel>
 - LVGL 문서: <https://docs.lvgl.io/>
+- ESP-IDF 이슈 #19070, RGB LCD 바운스 버퍼 EOF 카운터가 VSYNC 재시작에서 다시 맞춰지지 않는 버그: <https://github.com/espressif/esp-idf/issues/19070>
+- ESP-IDF RGB LCD 드라이버 소스(`esp_lcd_panel_rgb.c`): <https://github.com/espressif/esp-idf/blob/master/components/esp_lcd/rgb/esp_lcd_panel_rgb.c>
+- Arduino ESP32 3.3.13 릴리스: <https://github.com/espressif/arduino-esp32/releases/tag/3.3.13>
 - WinLibs(Windows용 MinGW-w64 `g++`): <https://winlibs.com/>
 
 - Claude 고객지원, 데이터 내보내기: <https://support.claude.com/en/articles/9450526-how-to-export-your-claude-data>

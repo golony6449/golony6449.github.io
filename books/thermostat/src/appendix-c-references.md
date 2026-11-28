@@ -35,5 +35,6 @@
 - ESP-IDF RGB LCD 드라이버 소스(`esp_lcd_panel_rgb.c`): <https://github.com/espressif/esp-idf/blob/master/components/esp_lcd/rgb/esp_lcd_panel_rgb.c>
 - Arduino ESP32 3.3.13 릴리스: <https://github.com/espressif/arduino-esp32/releases/tag/3.3.13>
 - WinLibs(Windows용 MinGW-w64 `g++`): <https://winlibs.com/>
+- arduino-cli 1.6.0 빌더 소스(라이브러리 감지 캐시, 빌드 옵션, 오브젝트 재사용 판단): <https://github.com/arduino/arduino-cli/tree/v1.6.0/internal/arduino/builder>
 
 - Claude 고객지원, 데이터 내보내기: <https://support.claude.com/en/articles/9450526-how-to-export-your-claude-data>
